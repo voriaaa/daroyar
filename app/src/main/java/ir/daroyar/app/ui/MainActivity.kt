@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.daroyar.app.data.MedStore
+import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.reminder.Notifier
@@ -87,6 +88,12 @@ private fun AppRoot() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var editingId by rememberSaveable { mutableLongStateOf(NO_EDITOR) }
     var viewingId by rememberSaveable { mutableLongStateOf(NO_EDITOR) }
+    // Which kind a brand-new entry starts as (the editor can still switch it).
+    var newKind by rememberSaveable { mutableStateOf(Kind.MEDICINE) }
+    val startNew = { k: Kind ->
+        newKind = k
+        editingId = NEW_MEDICATION
+    }
     val findings = remember(meds) { InteractionChecker.check(meds.filter { it.active }) }
 
     // Ticks so "late" badges and the date stay current while the app is open.
@@ -115,7 +122,7 @@ private fun AppRoot() {
     }
 
     if (editingId != NO_EDITOR) {
-        val initial = remember(editingId) { store.medication(editingId) ?: Medication() }
+        val initial = remember(editingId) { store.medication(editingId) ?: Medication(kind = newKind) }
         val close = { editingId = NO_EDITOR }
         BackHandler(onBack = close)
         EditMedScreen(
@@ -183,15 +190,15 @@ private fun AppRoot() {
                         selected = tab == 1,
                         onClick = { tab = 1 },
                         icon = { Icon(Icons.Outlined.Medication, contentDescription = null) },
-                        label = { Text("داروهای من") },
+                        label = { Text("داروها و مکمل‌ها") },
                     )
                 }
             },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    onClick = { editingId = NEW_MEDICATION },
+                    onClick = { startNew(Kind.MEDICINE) },
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text("افزودن دارو") },
+                    text = { Text("افزودن") },
                 )
             },
         ) { padding ->
@@ -221,7 +228,7 @@ private fun AppRoot() {
                                 ReminderScheduler.cancelSnooze(context, med.id, minute)
                             }
                         },
-                        onAdd = { editingId = NEW_MEDICATION },
+                        onAdd = { startNew(Kind.MEDICINE) },
                         onShowAlerts = { tab = 1 },
                     )
                     else -> MedsScreen(
@@ -232,7 +239,7 @@ private fun AppRoot() {
                             store.save(med.copy(active = active))
                             ReminderScheduler.sync(context)
                         },
-                        onAdd = { editingId = NEW_MEDICATION },
+                        onAdd = startNew,
                     )
                 }
             }

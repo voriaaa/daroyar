@@ -21,8 +21,8 @@ object Notifier {
     private const val TEST_ID = Int.MAX_VALUE
 
     fun createChannel(context: Context) {
-        val channel = NotificationChannel(CHANNEL_ID, "یادآوری مصرف دارو", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "اعلان در زمان هر نوبت دارو"
+        val channel = NotificationChannel(CHANNEL_ID, "یادآوری دارو و مکمل", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "اعلان در زمان هر نوبت دارو یا مکمل"
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 400, 200, 400)
         }

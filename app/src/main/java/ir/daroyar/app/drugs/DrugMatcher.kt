@@ -3,8 +3,9 @@ package ir.daroyar.app.drugs
 /**
  * Finds the drugs in a free-text medication name such as "قرص متفورمین ۵۰۰" or "Zoloft 50mg".
  *
- * Names are compared after [normalize]: Arabic letter variants become Persian, and digits, units
- * are kept out because every non-letter becomes a space. Longer names win over shorter ones
+ * Names are compared after [normalize]: Arabic letter variants become Persian, Persian digits become
+ * Latin (so "ب۱۲" and "B12" match but "ب۶" doesn't), and everything else becomes a space. Doses
+ * and units don't get in the way because names are found as substrings of the text. Longer names win over shorter ones
  * they contain ("اس‌سیتالوپرام" is escitalopram, not citalopram), and very short names
  * ("آهن", "روی") must stand as a whole word to avoid matching inside other words.
  */
@@ -48,6 +49,7 @@ object DrugMatcher {
                 // Diacritics (harakat, superscript alef) and tatweel are dropped.
                 mapped in 'ً'..'ٟ' || mapped == 'ٰ' || mapped == 'ـ' -> Unit
                 mapped.isLetter() -> sb.append(mapped)
+                mapped.isDigit() -> sb.append('0' + Character.getNumericValue(mapped))
                 else -> sb.append(' ')
             }
         }

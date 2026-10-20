@@ -79,6 +79,30 @@ class InteractionTest {
     }
 
     @Test
+    fun supplementsInteractToo() {
+        assertEquals(Severity.MODERATE, check(med("وارفارین"), med("ویتامین K")).first().severity)
+        assertEquals(Severity.HIGH, check(med("راکوتان"), med("ویتامین آ")).first().severity)
+        // St John's wort lowers the effect of the pill.
+        assertEquals(Severity.HIGH, check(med("علف چای"), med("قرص ضدبارداری")).first().severity)
+        assertTrue(check(med("ویتامین ث"), med("ویتامین ب۱۲")).isEmpty())
+    }
+
+    @Test
+    fun probioticNeedsSpacingFromAntibiotics() {
+        assertFalse(check(med("پروبیوتیک", 9 * 60), med("آموکسی سیلین", 9 * 60)).single().spacingOk)
+        assertTrue(check(med("پروبیوتیک", 7 * 60 + 30), med("سفیکسیم", 13 * 60)).single().spacingOk)
+    }
+
+    @Test
+    fun suggestedSupplementTimesKeepTheirOwnSpacing() {
+        // The default suggestions shouldn't trip the app's own spacing warnings.
+        val findings = check(
+            med("لووتیروکسین", 6 * 60 + 30), med("آهن", 11 * 60), med("کلسیم", 13 * 60), med("روی", 16 * 60),
+        )
+        assertTrue(findings.joinToString { it.text }, findings.none { it.needsAttention })
+    }
+
+    @Test
     fun spacingAcrossMidnight() {
         assertTrue(InteractionChecker.spacingOk(listOf(22 * 60), listOf(7 * 60), 240, 240))
         assertFalse(InteractionChecker.spacingOk(listOf(23 * 60), listOf(60), 240, 240))

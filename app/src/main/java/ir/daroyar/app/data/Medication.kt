@@ -6,8 +6,11 @@ import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+/** Medicines and supplements (vitamins, minerals…) are reminded alike; the kind only changes wording and grouping. */
+enum class Kind(val noun: String) { MEDICINE("دارو"), SUPPLEMENT("مکمل") }
+
 /**
- * A medicine taken at fixed times, every day or on some days of the week.
+ * A medicine or supplement taken at fixed times, every day or on some days of the week.
  *
  * @property times dose times as minutes since midnight, sorted and distinct.
  * @property days weekdays the medicine is taken on; empty means every day (never all seven).
@@ -24,7 +27,13 @@ data class Medication(
     val perDose: Int = 1,
     val active: Boolean = true,
     val days: Set<DayOfWeek> = emptySet(),
+    val kind: Kind = Kind.MEDICINE,
 ) {
+    val isSupplement: Boolean get() = kind == Kind.SUPPLEMENT
+
+    /** "دارو" or "مکمل", for labels such as "حذف دارو". */
+    val noun: String get() = kind.noun
+
     val everyDay: Boolean get() = days.isEmpty()
 
     fun isDueOn(date: LocalDate): Boolean = Schedule.isDue(days, date)
@@ -43,6 +52,7 @@ data class Medication(
         .put("perDose", perDose)
         .put("active", active)
         .put("days", JSONArray(days.sorted().map { it.value }))
+        .put("kind", if (isSupplement) "supplement" else "medicine")
 
     companion object {
         fun fromJson(o: JSONObject): Medication {
@@ -61,6 +71,8 @@ data class Medication(
                 days = Schedule.normalizeDays(
                     List(d.length()) { d.optInt(it) }.filter { it in 1..7 }.map { DayOfWeek.of(it) }
                 ),
+                // Saved before supplements existed: a medicine.
+                kind = if (o.optString("kind") == "supplement") Kind.SUPPLEMENT else Kind.MEDICINE,
             )
         }
     }

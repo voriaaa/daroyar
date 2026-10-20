@@ -1,5 +1,6 @@
 package ir.daroyar.app
 
+import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -16,6 +17,14 @@ class MedicationJsonTest {
         val med = Medication(id = 3, name = "متوترکسات", times = listOf(9 * 60), days = setOf(SATURDAY, WEDNESDAY))
         assertEquals(med, Medication.fromJson(JSONObject(med.toJson().toString())))
         assertEquals(Medication(id = 4, name = "x"), Medication.fromJson(Medication(id = 4, name = "x").toJson()))
+    }
+
+    @Test
+    fun kindRoundTripsAndOldEntriesAreMedicines() {
+        val vitamin = Medication(id = 5, name = "ویتامین د", times = listOf(13 * 60), kind = Kind.SUPPLEMENT)
+        assertEquals(vitamin, Medication.fromJson(JSONObject(vitamin.toJson().toString())))
+        val old = JSONObject("""{"id":1,"name":"متفورمین","times":[480]}""")
+        assertEquals(Kind.MEDICINE, Medication.fromJson(old).kind)
     }
 
     @Test

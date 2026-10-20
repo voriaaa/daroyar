@@ -40,6 +40,13 @@ class DrugDatabaseTest {
     }
 
     @Test
+    fun everySupplementSuggestsATime() {
+        val supplements = DrugDatabase.drugs.filter { it.isSupplement }
+        assertTrue(supplements.size >= 20)
+        supplements.forEach { assertTrue("${it.id} has no suggested time", !it.suggestedTimes.isNullOrEmpty()) }
+    }
+
+    @Test
     fun combosPointAtRealDrugs() {
         DrugDatabase.combos.values.flatten().forEach { assertTrue(it, it in DrugDatabase.byId) }
     }

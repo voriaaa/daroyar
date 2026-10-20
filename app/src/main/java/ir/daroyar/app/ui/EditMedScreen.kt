@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -41,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +56,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
+import ir.daroyar.app.drugs.Drug
+import ir.daroyar.app.drugs.DrugDatabase
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.reminder.Schedule
@@ -85,6 +91,9 @@ fun EditMedScreen(
     var perDoseText by rememberSaveable { mutableStateOf(initial.perDose.toString()) }
     var showErrors by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var kind by rememberSaveable { mutableStateOf(initial.kind) }
+    var kindTouched by rememberSaveable { mutableStateOf(false) }
+    val noun = kind.noun
 
     fun setTimes(list: List<Int>) {
         times = ArrayList(list.distinct().sorted())
@@ -105,6 +114,18 @@ fun EditMedScreen(
     }
 
     val matched = remember(name) { DrugMatcher.match(name) }
+    // A new entry follows what the name turns out to be, until the user picks the kind themselves.
+    LaunchedEffect(matched) {
+        if (initial.id == 0L && !kindTouched && matched.isNotEmpty()) {
+            kind = if (matched.all { it.isSupplement }) Kind.SUPPLEMENT else Kind.MEDICINE
+        }
+    }
+
+    /** Picks a name from the reference and, for a new schedule, starts from its best times. */
+    fun pickDrug(drug: Drug) {
+        name = drug.fa
+        if (times.isEmpty()) drug.suggestedTimes?.let { setTimes(it) }
+    }
     val suggestions = remember(name) { if (matched.isEmpty()) DrugMatcher.suggest(name) else emptyList() }
     val warnings = remember(name, times, otherMeds) {
         InteractionChecker.checkAgainst(initial.copy(name = name, times = times.toList()), otherMeds.filter { it.active })
@@ -126,7 +147,12 @@ fun EditMedScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (initial.id == 0L) "داروی جدید" else "ویرایش دارو", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        if (initial.id == 0L) (if (kind == Kind.SUPPLEMENT) "مکمل جدید" else "داروی جدید") else "ویرایش $noun",
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "بازگشت")
@@ -135,7 +161,7 @@ fun EditMedScreen(
                 actions = {
                     if (onDelete != null) {
                         IconButton(onClick = { confirmDelete = true }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "حذف دارو")
+                            Icon(Icons.Outlined.Delete, contentDescription = "حذف $noun")
                         }
                     }
                 },
@@ -151,13 +177,27 @@ fun EditMedScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = kind == Kind.MEDICINE,
+                    onClick = { kind = Kind.MEDICINE; kindTouched = true },
+                    label = { Text("دارو") },
+                    leadingIcon = { Icon(Icons.Outlined.Medication, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
+                FilterChip(
+                    selected = kind == Kind.SUPPLEMENT,
+                    onClick = { kind = Kind.SUPPLEMENT; kindTouched = true },
+                    label = { Text("مکمل و ویتامین") },
+                    leadingIcon = { Icon(Icons.Outlined.Spa, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
+            }
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("نام دارو *") },
-                placeholder = { Text("مثلاً متفورمین ۵۰۰") },
+                label = { Text("نام $noun *") },
+                placeholder = { Text(if (kind == Kind.SUPPLEMENT) "مثلاً ویتامین د یا امگا ۳" else "مثلاً متفورمین ۵۰۰") },
                 isError = nameError,
-                supportingText = if (nameError) ({ Text("نام دارو را وارد کنید") }) else null,
+                supportingText = if (nameError) ({ Text("نام $noun را وارد کنید") }) else null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
@@ -165,7 +205,19 @@ fun EditMedScreen(
             if (suggestions.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     suggestions.forEach { drug ->
-                        AssistChip(onClick = { name = drug.fa }, label = { Text(drug.fa) })
+                        AssistChip(onClick = { pickDrug(drug) }, label = { Text(drug.fa) })
+                    }
+                }
+            }
+            if (kind == Kind.SUPPLEMENT && name.isBlank()) {
+                Text(
+                    "مکمل‌های رایج (ساعت مناسب مصرف خودکار پیشنهاد می‌شود):",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    commonSupplements.forEach { drug ->
+                        AssistChip(onClick = { pickDrug(drug) }, label = { Text(drug.fa) })
                     }
                 }
             }
@@ -180,7 +232,7 @@ fun EditMedScreen(
                 value = dose,
                 onValueChange = { dose = it },
                 label = { Text("مقدار هر نوبت") },
-                placeholder = { Text("مثلاً ۱ قرص یا ۵ میلی‌لیتر") },
+                placeholder = { Text(if (kind == Kind.SUPPLEMENT) "مثلاً ۱ کپسول یا ۱۰۰۰ واحد" else "مثلاً ۱ قرص یا ۵ میلی‌لیتر") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
@@ -316,7 +368,7 @@ fun EditMedScreen(
             )
 
             if (warnings.isNotEmpty()) {
-                SectionTitle("هشدار با داروهای دیگر شما")
+                SectionTitle("هشدار با داروها و مکمل‌های دیگر شما")
                 warnings.forEach { FindingCard(it) }
                 Disclaimer()
             }
@@ -334,6 +386,7 @@ fun EditMedScreen(
                                 notes = notes.trim(),
                                 times = times.distinct().sorted(),
                                 days = scheduledDays,
+                                kind = kind,
                                 stock = if (trackStock) stock?.coerceAtLeast(0) else null,
                                 perDose = perDoseText.latinDigits().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1,
                             )
@@ -353,7 +406,7 @@ fun EditMedScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("حذف ${initial.name}؟") },
-            text = { Text("یادآوری‌های این دارو هم حذف می‌شود.") },
+            text = { Text("یادآوری‌های این $noun هم حذف می‌شود.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
@@ -366,6 +419,8 @@ fun EditMedScreen(
         )
     }
 }
+
+private val commonSupplements: List<Drug> by lazy { DrugDatabase.drugs.filter { it.isSupplement } }
 
 @Composable
 private fun SectionTitle(text: String) {

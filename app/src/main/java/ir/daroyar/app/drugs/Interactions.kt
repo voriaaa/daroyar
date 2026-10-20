@@ -268,6 +268,28 @@ val interactionRules: List<Rule> = listOf(
         "خطر بالا رفتن فشار داخل جمجمه (سردرد شدید، تاری دید). با هم مصرف نشوند.",
     ),
 
+    // ---- Supplements ----
+    rule(
+        "warfarin", "vitamin_k", MODERATE,
+        "ویتامین K اثر وارفارین را کم می‌کند. مصرف آن باید ثابت باشد و با پزشک هماهنگ شود، چون INR تغییر می‌کند.",
+    ),
+    rule(
+        "warfarin", "coq10 ginseng", MODERATE,
+        "این مکمل ممکن است اثر وارفارین را کم کند؛ INR را زودتر چک کنید.",
+    ),
+    rule(
+        "warfarin", "glucosamine", MODERATE,
+        "گلوکزامین ممکن است INR را بالا ببرد و خطر خونریزی را بیشتر کند.",
+    ),
+    rule(
+        "anticoagulant antiplatelet", "bleeding_supplement", MODERATE,
+        "این مکمل (به‌خصوص در دوز بالا) خطر خونریزی را کمی بیشتر می‌کند. به پزشک بگویید.",
+    ),
+    rule(
+        "isotretinoin", "vitamin_a", HIGH,
+        "ویتامین A همراه ایزوترتینوئین می‌تواند مسمومیت با ویتامین A ایجاد کند (سردرد شدید، ریزش مو، آسیب کبد). با هم مصرف نشوند.",
+    ),
+
     // ---- Doses that only need spacing in time ----
     spacing(
         "levothyroxine", "polyvalent_cation", before = 240, after = 240,
@@ -312,6 +334,10 @@ val interactionRules: List<Rule> = listOf(
     spacing(
         "phenytoin", "antacid", before = 120, after = 120,
         text = "آنتی‌اسید جذب فنی‌توئین را کم می‌کند؛ دست‌کم ۲ ساعت فاصله بدهید.",
+    ),
+    spacing(
+        "probiotic", "antibiotic", before = 120, after = 120,
+        text = "آنتی‌بیوتیک باکتری‌های مفید پروبیوتیک را از بین می‌برد؛ پروبیوتیک را دست‌کم ۲ ساعت قبل یا بعد از آنتی‌بیوتیک بخورید.",
     ),
     spacing(
         "aspirin", "ibuprofen", before = 30, after = 480,

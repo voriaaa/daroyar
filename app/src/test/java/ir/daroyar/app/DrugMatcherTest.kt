@@ -50,9 +50,24 @@ class DrugMatcherTest {
         assertEquals(listOf("iron"), ids("قرص آهن"))
         assertEquals(listOf("zinc"), ids("قرص روی"))
         assertEquals(listOf("oral_contraceptive"), ids("ال دی"))
-        assertTrue(ids("ویتامین ب۱۲").isEmpty())
+        assertTrue(ids("ویتامین ب۶").isEmpty())
         assertTrue(ids("قرص ناشناخته").isEmpty())
         assertTrue(ids("").isEmpty())
+    }
+
+    @Test
+    fun recognizesSupplementsAndTellsVitaminsApart() {
+        assertEquals(listOf("vitamin_b12"), ids("ویتامین ب۱۲ ۱۰۰۰"))
+        assertEquals(listOf("vitamin_b12"), ids("B12"))
+        assertEquals(listOf("b_complex"), ids("ویتامین ب کمپلکس"))
+        assertEquals(listOf("vitamin_d"), ids("ویتامین د۳ ۵۰۰۰۰"))
+        assertEquals(listOf("vitamin_e"), ids("ویتامین ای ۴۰۰"))
+        assertEquals(listOf("vitamin_a"), ids("ویتامین آ"))
+        assertEquals(listOf("omega3"), ids("امگا ۳ ۱۰۰۰"))
+        assertEquals(listOf("coq10"), ids("کوآنزیم کیو ۱۰"))
+        assertEquals(listOf("calcium", "magnesium", "zinc"), ids("کلسیم منیزیم زینک"))
+        assertTrue(DrugMatcher.match("ملاتونین ۳").single().isSupplement)
+        assertTrue(DrugMatcher.match("متفورمین").none { it.isSupplement })
     }
 
     @Test

@@ -82,9 +82,9 @@ fun TodayScreen(
                 EmptyState(
                     title = if (meds.isEmpty()) "هنوز دارویی ثبت نکرده‌اید" else "برای امروز نوبتی نیست",
                     body = if (meds.any { it.active }) {
-                        "داروهای شما امروز نوبتی ندارند. برای داروی تازه، آن را با ساعت و روزهای مصرفش اضافه کنید."
+                        "داروها و مکمل‌های شما امروز نوبتی ندارند. برای مورد تازه، آن را با ساعت و روزهای مصرفش اضافه کنید."
                     } else {
-                        "دارو و ساعت‌های مصرفش را اضافه کنید تا سر وقت با اعلان یادآوری شود."
+                        "دارو یا مکمل (مثل ویتامین‌ها) و ساعت‌های مصرفش را اضافه کنید تا سر وقت با اعلان یادآوری شود."
                     },
                     action = "افزودن دارو",
                     onAction = onAdd,
@@ -215,7 +215,8 @@ private fun DoseCard(dose: Dose, isNext: Boolean, onToggle: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     color = if (faded) colors.onSurfaceVariant else Color.Unspecified,
                 )
-                val detail = listOf(dose.med.dose, dose.med.notes).filter { it.isNotBlank() }.joinToString(" · ")
+                val kindLabel = if (dose.med.isSupplement) "مکمل" else ""
+                val detail = listOf(kindLabel, dose.med.dose, dose.med.notes).filter { it.isNotBlank() }.joinToString(" · ")
                 if (detail.isNotEmpty()) {
                     Text(detail.fa(), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
                 }

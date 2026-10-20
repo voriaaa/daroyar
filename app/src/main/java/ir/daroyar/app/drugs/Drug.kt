@@ -28,6 +28,9 @@ data class Drug(
 ) {
     val allTags: Set<String> get() = tags + id
 
+    /** Vitamins, minerals and herbal products, as opposed to medicines. */
+    val isSupplement: Boolean get() = "supplement" in tags
+
     /** A weekly drug scheduled on more than one day a week ([days] empty = every day). */
     fun tooFrequent(days: Set<DayOfWeek>): Boolean = weekly && days.size != 1
 }

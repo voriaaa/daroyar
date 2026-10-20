@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.Finding
@@ -42,7 +43,7 @@ fun MedsScreen(
     findings: List<Finding>,
     onOpen: (Medication) -> Unit,
     onToggleActive: (Medication, Boolean) -> Unit,
-    onAdd: () -> Unit,
+    onAdd: (Kind) -> Unit,
 ) {
     val unknown = remember(meds) { meds.filter { it.active && DrugMatcher.match(it.name).isEmpty() } }
     var showSpacingOk by rememberSaveable { mutableStateOf(false) }
@@ -52,13 +53,13 @@ fun MedsScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (meds.count { it.active } >= 2) {
-            item { SectionHeader("تداخل‌های دارویی") }
+            item { SectionHeader("تداخل‌ها") }
             val important = findings.filter { it.rank < 3 }
             val satisfied = findings.filter { it.rank == 3 }
             if (important.isEmpty()) {
                 item {
                     Text(
-                        "تداخل مهمی بین داروهای فعال شما پیدا نشد.",
+                        "تداخل مهمی بین داروها و مکمل‌های فعال شما پیدا نشد.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -79,38 +80,57 @@ fun MedsScreen(
             if (unknown.isNotEmpty()) {
                 item {
                     Text(
-                        "این داروها در بانک دارویار نیستند و بررسی نشدند: " + unknown.joinToString("، ") { it.name },
+                        "این موارد در بانک دارویار نیستند و بررسی نشدند: " + unknown.joinToString("، ") { it.name },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             item { Disclaimer() }
-            item { SectionHeader("داروهای من") }
         }
         if (meds.isEmpty()) {
             item {
                 EmptyState(
-                    title = "فهرست داروها خالی است",
-                    body = "برای هر دارو نام، مقدار و ساعت‌های مصرف را وارد کنید.",
-                    action = "افزودن اولین دارو",
-                    onAction = onAdd,
+                    title = "فهرست خالی است",
+                    body = "داروها و مکمل‌هایی مثل ویتامین‌ها را با ساعت مصرفشان اضافه کنید تا سر وقت یادآوری شوند.",
+                    action = "افزودن دارو",
+                    onAction = { onAdd(Kind.MEDICINE) },
                 )
             }
         }
-        items(meds.sortedBy { it.name }, key = { it.id }) { med ->
-            MedCard(med, onClick = { onOpen(med) }, onToggleActive = { onToggleActive(med, it) })
+        val (supplements, medicines) = meds.sortedBy { it.name }.partition { it.isSupplement }
+        listOf(Kind.MEDICINE to medicines, Kind.SUPPLEMENT to supplements).forEach { (kind, list) ->
+            if (meds.isNotEmpty()) {
+                item(key = "header-${kind.name}") {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SectionHeader(if (kind == Kind.MEDICINE) "داروها" else "مکمل‌ها و ویتامین‌ها", Modifier.weight(1f))
+                        TextButton(onClick = { onAdd(kind) }) { Text("+ افزودن ${kind.noun}") }
+                    }
+                }
+            }
+            items(list, key = { it.id }) { med ->
+                MedCard(med, onClick = { onOpen(med) }, onToggleActive = { onToggleActive(med, it) })
+            }
+        }
+        if (meds.isNotEmpty() && supplements.isEmpty()) {
+            item {
+                Text(
+                    "ویتامین یا مکمل هم مصرف می‌کنید؟ آن را اضافه کنید تا بهترین ساعت مصرفش پیشنهاد و یادآوری شود.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun SectionHeader(text: String) {
+private fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 8.dp),
+        modifier = modifier.padding(top = 8.dp),
     )
 }
 
