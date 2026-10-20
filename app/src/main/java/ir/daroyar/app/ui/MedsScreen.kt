@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -149,6 +150,8 @@ private fun MedCard(med: Medication, onClick: () -> Unit, onToggleActive: (Boole
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            MedIcon(med, Modifier.alpha(if (med.active) 1f else 0.45f), size = 48.dp)
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     med.name,

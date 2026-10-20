@@ -1,7 +1,10 @@
 package ir.daroyar.app.ui
 
 import android.app.TimePickerDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -16,11 +19,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
@@ -48,12 +53,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +70,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ir.daroyar.app.data.DateRange
+import ir.daroyar.app.data.Form
 import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.Drug
@@ -110,6 +119,10 @@ fun EditMedScreen(
     var namePicked by rememberSaveable { mutableStateOf(initial.name.isNotBlank()) }
     var kind by rememberSaveable { mutableStateOf(initial.kind) }
     var kindTouched by rememberSaveable { mutableStateOf(false) }
+    var form by rememberSaveable { mutableStateOf(initial.form) }
+    // A new entry takes the form its name spells out ("شربت…", "قطره…") until the user picks one.
+    var formTouched by rememberSaveable { mutableStateOf(initial.id != 0L) }
+    var color by rememberSaveable { mutableIntStateOf(if (initial.id == 0L) nextFreeColor(otherMeds) else initial.color) }
     val noun = kind.noun
 
     // A new entry gets the drug's best times automatically until the user changes the times themselves.
@@ -156,6 +169,10 @@ fun EditMedScreen(
                 autoTimesFor = null
             }
         }
+    }
+
+    LaunchedEffect(name, kind) {
+        if (!formTouched) form = Form.guess(name) ?: if (kind == Kind.SUPPLEMENT) Form.CAPSULE else Form.TABLET
     }
 
     fun pickDrug(drug: Drug) {
@@ -300,6 +317,57 @@ fun EditMedScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            SectionTitle("شکل و رنگ")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MedIcon(form, medColor(color), size = 64.dp)
+                Spacer(Modifier.width(14.dp))
+                Text(
+                    "این شکل و رنگ کنار نام $noun در برنامهٔ امروز دیده می‌شود تا داروها را راحت از هم تشخیص دهید.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Form.entries.forEach { f ->
+                    FilterChip(
+                        selected = form == f,
+                        onClick = {
+                            form = f
+                            formTouched = true
+                        },
+                        label = { Text(f.label) },
+                        leadingIcon = { MedIcon(f, medColor(color), size = 24.dp) },
+                    )
+                }
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MED_COLORS.indices.forEach { i ->
+                    val selected = Math.floorMod(color, MED_COLORS.size) == i
+                    Box(
+                        Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(medColor(i))
+                            .border(
+                                width = if (selected) 3.dp else 0.dp,
+                                color = if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                shape = CircleShape,
+                            )
+                            .clickable { color = i },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (selected) Icon(Icons.Filled.Check, contentDescription = "رنگ انتخاب‌شده", tint = Color.White)
+                    }
+                }
+            }
 
             SectionTitle("ساعت‌های مصرف")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -510,6 +578,8 @@ fun EditMedScreen(
                                 days = scheduledDays,
                                 range = if (useRange) range else null,
                                 kind = kind,
+                                form = form,
+                                color = color,
                                 stock = if (trackStock) stock?.coerceAtLeast(0) else null,
                                 perDose = perDoseText.latinDigits().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1,
                             )

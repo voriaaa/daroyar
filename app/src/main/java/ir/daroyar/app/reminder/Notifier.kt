@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import ir.daroyar.app.R
 import ir.daroyar.app.data.Medication
+import ir.daroyar.app.ui.MED_COLORS
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.ui.MainActivity
 import ir.daroyar.app.util.fa
@@ -51,6 +52,8 @@ object Notifier {
 
         val notification = baseBuilder(context)
             .setContentTitle("وقت مصرف ${med.name}")
+            // Tinted with the medication's own colour, as in the app.
+            .setColor(MED_COLORS[Math.floorMod(med.color, MED_COLORS.size)].toInt())
             .setContentText(text.lineSequence().first())
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .addAction(0, "مصرف کردم ✓", takenPi)

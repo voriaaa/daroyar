@@ -2,9 +2,12 @@ package ir.daroyar.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -86,11 +89,14 @@ fun MedInfoScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
             ) {
-                Column(
+                Row(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
+                    MedIcon(med, size = 56.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
                     Text("برنامهٔ شما", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     if (med.dose.isNotBlank()) Text(med.dose.fa(), style = MaterialTheme.typography.bodyLarge)
                     Text(
@@ -108,6 +114,7 @@ fun MedInfoScreen(
                     med.stock?.let { Text("موجودی: ${it.fa()} عدد", style = MaterialTheme.typography.bodyMedium) }
                     if (med.notes.isNotBlank()) Text(med.notes, style = MaterialTheme.typography.bodyMedium)
                     if (!med.active) Text("یادآوری متوقف شده", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
 

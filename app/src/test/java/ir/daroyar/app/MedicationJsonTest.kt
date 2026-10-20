@@ -1,5 +1,6 @@
 package ir.daroyar.app
 
+import ir.daroyar.app.data.Form
 import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import org.json.JSONObject
@@ -41,5 +42,30 @@ class MedicationJsonTest {
         assertEquals(emptySet<DayOfWeek>(), Medication.fromJson(all).days)
         val junk = JSONObject("""{"id":1,"times":[480],"days":[0,6,6,9,"x"]}""")
         assertEquals(setOf(SATURDAY), Medication.fromJson(junk).days)
+    }
+
+    @Test
+    fun formAndColourAreSavedAndOldEntriesGetDefaults() {
+        val med = Medication(id = 5, name = "شربت دیفن", times = listOf(480), form = Form.SYRUP, color = 3)
+        assertEquals(med, Medication.fromJson(JSONObject(med.toJson().toString())))
+        val old = Medication.fromJson(JSONObject("""{"id":6,"name":"x","times":[480]}"""))
+        assertEquals(Form.TABLET, old.form)
+        assertEquals(0, old.color)
+    }
+
+    @Test
+    fun formIsGuessedFromTheName() {
+        assertEquals(Form.SYRUP, Form.guess("شربت دیفن هیدرامین"))
+        assertEquals(Form.DROPS, Form.guess("قطره آهن"))
+        assertEquals(Form.SPRAY, Form.guess("اسپری سالبوتامول"))
+        assertEquals(Form.SPRAY, Form.guess("Ventolin inhaler"))
+        assertEquals(Form.INJECTION, Form.guess("انسولین لانتوس"))
+        assertEquals(Form.CAPSULE, Form.guess("کپسول امگا ۳"))
+        assertEquals(Form.CAPSULE, Form.guess("ویتامین د سافت ژل"))
+        assertEquals(Form.CREAM, Form.guess("پماد بتامتازون"))
+        assertEquals(Form.TABLET, Form.guess("قرص متفورمین ۵۰۰"))
+        assertEquals(null, Form.guess("متفورمین"))
+        // Whole words only: "کرمک" (pinworm) is not a cream.
+        assertEquals(null, Form.guess("داروی کرمک"))
     }
 }
