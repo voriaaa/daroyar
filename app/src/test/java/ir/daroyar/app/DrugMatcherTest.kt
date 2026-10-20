@@ -50,7 +50,8 @@ class DrugMatcherTest {
         assertEquals(listOf("iron"), ids("قرص آهن"))
         assertEquals(listOf("zinc"), ids("قرص روی"))
         assertEquals(listOf("oral_contraceptive"), ids("ال دی"))
-        assertTrue(ids("ویتامین ب۶").isEmpty())
+        assertEquals(listOf("pyridoxine"), ids("ویتامین ب۶"))
+        assertTrue(ids("ویتامین ب۳").isEmpty())
         assertTrue(ids("قرص ناشناخته").isEmpty())
         assertTrue(ids("").isEmpty())
     }
