@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="50"
+        android:pivotY="52"
+        android:rotation="-45">
+        <!-- left half of the capsule (white) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M50,42 L40,42 A10,10 0 0,0 40,62 L50,62 Z" />
+        <!-- right half of the capsule (mint) -->
+        <path
+            android:fillColor="#B8F2E6"
+            android:pathData="M50,42 L60,42 A10,10 0 0,1 60,62 L50,62 Z" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M50,43.5 L50,60.5"
+            android:strokeWidth="1.5"
+            android:strokeColor="#0F8B7D" />
+    </group>
+    <!-- bell badge, lower right (kept inside the 66dp safe zone) -->
+    <group
+        android:translateX="-4"
+        android:translateY="30">
+        <path
+            android:fillColor="#FFC857"
+            android:pathData="M64,40 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" />
+        <path
+            android:fillColor="#0F8B7D"
+            android:pathData="M74,33.5 c-2.6,0 -4.2,2 -4.2,4.6 v3.4 l-1.6,1.8 h11.6 l-1.6,-1.8 v-3.4 c0,-2.6 -1.6,-4.6 -4.2,-4.6 Z M72.4,44.4 a1.6,1.6 0 0,0 3.2,0 Z" />
+    </group>
+</vector>
