@@ -83,6 +83,19 @@ fun DayOfWeek.persianName(): String = when (this) {
     DayOfWeek.FRIDAY -> "جمعه"
 }
 
+/** The Iranian week, Saturday first. */
+val PERSIAN_WEEK: List<DayOfWeek> = listOf(
+    DayOfWeek.SATURDAY, DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+    DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY,
+)
+
+/** "هر روز", "هفته‌ای یک بار: شنبه" or "شنبه، دوشنبه، چهارشنبه"; empty or all seven means every day. */
+fun formatDays(days: Set<DayOfWeek>): String = when (days.size) {
+    0, 7 -> "هر روز"
+    1 -> "هفته‌ای یک بار: ${days.single().persianName()}"
+    else -> PERSIAN_WEEK.filter { it in days }.joinToString("، ") { it.persianName() }
+}
+
 /** e.g. "سه‌شنبه ۲۸ مهر ۱۴۰۵" */
 fun formatPersianDate(date: LocalDate): String {
     val j = JalaliDate.from(date)

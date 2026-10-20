@@ -14,8 +14,11 @@ import java.time.ZoneId
 /**
  * One alarm per time of day that any active medication uses (a "slot"), always set for its next
  * occurrence only. When it fires, [ReminderReceiver] notifies every medication due at that time
- * and sets the following day's alarm. Sharing one alarm per slot matters in Doze, where Android
- * delays an app's back-to-back exact alarms by several minutes.
+ * on that day and sets the slot's next alarm. Sharing one alarm per slot matters in Doze, where
+ * Android delays an app's back-to-back exact alarms by several minutes.
+ *
+ * A slot rings only on the weekdays some medication needs it ([Schedule.slotDays]), so a time used
+ * only by a weekly drug wakes the phone once a week.
  */
 object ReminderScheduler {
 
@@ -36,7 +39,8 @@ object ReminderScheduler {
     /** Brings the alarms in line with the current medications; call after any change to them. */
     @Synchronized
     fun sync(context: Context) {
-        val wanted = MedStore.get(context).meds.value
+        val meds = MedStore.get(context).meds.value
+        val wanted = meds
             .filter { it.active }
             .flatMap { it.times }
             .toSet()
@@ -55,7 +59,9 @@ object ReminderScheduler {
             }
         }
         val now = LocalDateTime.now()
-        wanted.forEach { minute -> scheduleSlot(context, minute, Schedule.nextAfter(now, minute)) }
+        wanted.forEach { minute ->
+            scheduleSlot(context, minute, Schedule.nextAfter(now, minute, Schedule.slotDays(meds, minute)))
+        }
         prefs.edit().putString(KEY_SLOTS, wanted.sorted().joinToString(",")).apply()
     }
 

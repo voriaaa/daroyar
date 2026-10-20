@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -30,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import ir.daroyar.app.drugs.Drug
 import ir.daroyar.app.drugs.Finding
 import ir.daroyar.app.drugs.Severity
+import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatMinute
+import java.time.DayOfWeek
 
 const val MEDICAL_DISCLAIMER =
     "این اطلاعات خلاصه و عمومی است و جای توصیهٔ پزشک یا داروساز را نمی‌گیرد. دستور پزشکِ شما مقدم است؛ هیچ دارویی را خودسرانه قطع یا کم و زیاد نکنید."
@@ -77,6 +81,52 @@ fun DrugInfoCard(
                     Spacer(Modifier.width(6.dp))
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.tertiary)
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Strong warning for a once-a-week drug (methotrexate, alendronate) scheduled on more than one day
+ * a week ([Drug.tooFrequent]); taking these daily by mistake can cause serious harm.
+ */
+@Composable
+fun WeeklyDrugWarning(
+    drug: Drug,
+    days: Set<DayOfWeek>,
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val current = if (days.isEmpty() || days.size == 7) "هر روز" else "${days.size.fa()} روز در هفته"
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = colors.errorContainer, contentColor = colors.onErrorContainer),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Error, contentDescription = null, tint = colors.error)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "${drug.fa} معمولاً فقط هفته‌ای یک بار است",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "یادآوری این دارو $current تنظیم شده است. مصرف ${drug.fa} در چند روز هفته به‌جای یک روز ثابت " +
+                    "می‌تواند آسیب جدی بزند. اگر پزشک صریحاً برنامهٔ دیگری ننوشته، «هفته‌ای یک بار» را " +
+                    "انتخاب کنید و اگر مطمئن نیستید، پیش از مصرف از داروساز یا پزشک بپرسید.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = onAction,
+                colors = ButtonDefaults.buttonColors(containerColor = colors.error, contentColor = colors.onError),
+            ) {
+                Text(actionLabel)
             }
         }
     }

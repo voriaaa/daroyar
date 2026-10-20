@@ -1,6 +1,7 @@
 package ir.daroyar.app.drugs
 
 import ir.daroyar.app.data.Medication
+import java.time.DayOfWeek
 
 /**
  * One entry of the built-in drug reference.
@@ -9,6 +10,7 @@ import ir.daroyar.app.data.Medication
  * @property tip a few words added to the reminder notification, e.g. "همراه غذا".
  * @property suggestedTimes typical once/twice-daily times (minutes since midnight) when the time of
  *   day matters for this drug; null when it doesn't or depends on the prescription.
+ * @property weekly normally taken once a week; a daily schedule is a dangerous mix-up (methotrexate).
  */
 data class Drug(
     val id: String,
@@ -22,8 +24,12 @@ data class Drug(
     val tip: String?,
     val suggestedTimes: List<Int>?,
     val caution: String?,
+    val weekly: Boolean = false,
 ) {
     val allTags: Set<String> get() = tags + id
+
+    /** A weekly drug scheduled on more than one day a week ([days] empty = every day). */
+    fun tooFrequent(days: Set<DayOfWeek>): Boolean = weekly && days.size != 1
 }
 
 enum class Severity { HIGH, MODERATE, TIMING }

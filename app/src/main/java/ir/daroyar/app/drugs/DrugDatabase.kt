@@ -43,7 +43,8 @@ private fun d(
     tip: String? = null,
     times: List<Int>? = null,
     caution: String? = null,
-) = Drug(id, fa, en, aliases, tags, use, about, timing, tip, times, caution)
+    weekly: Boolean = false,
+) = Drug(id, fa, en, aliases, tags, use, about, timing, tip, times, caution, weekly)
 
 private const val WITH_FOOD = "همراه غذا"
 private const val NSAID_CAUTION =
@@ -1271,6 +1272,7 @@ private fun otherDrugs() = listOf(
         timing = "صبح ناشتا با یک لیوان کامل آب ساده (نه چای یا آب معدنی)، نشسته یا ایستاده؛ تا ۳۰ دقیقه چیزی نخورید و دراز نکشید.",
         tip = "صبح ناشتا؛ ۳۰ دقیقه دراز نکشید", times = listOf(t(7)),
         caution = "معمولاً هفته‌ای یک بار است؛ فقط در روز مشخص هفته بخورید.",
+        weekly = true,
     ),
     d(
         "methotrexate", "متوترکسات", "Methotrexate",
@@ -1280,6 +1282,7 @@ private fun otherDrugs() = listOf(
         about = "تعدیل‌کنندهٔ ایمنی؛ در روماتیسم و پسوریازیس با دوز کم و هفتگی مصرف می‌شود.",
         timing = "در روماتیسم و پسوریازیس فقط هفته‌ای یک بار، در یک روز ثابت. اسید فولیک طبق دستور پزشک (معمولاً روزی غیر از روز متوترکسات).",
         caution = "⚠️ مصرف روزانهٔ متوترکسات به‌جای هفتگی می‌تواند کشنده باشد. زخم دهان، تب یا تنگی نفس را فوراً گزارش کنید. الکل ممنوع.",
+        weekly = true,
     ),
     d(
         "hydroxychloroquine", "هیدروکسی‌کلروکین", "Hydroxychloroquine",

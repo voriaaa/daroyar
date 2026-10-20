@@ -58,7 +58,7 @@ fun TodayScreen(
 ) {
     val today = now.toLocalDate()
     val doses = remember(meds, taken, now) {
-        meds.filter { it.active }
+        meds.filter { it.active && it.isDueOn(today) }
             .flatMap { med -> med.times.map { med to it } }
             .sortedWith(compareBy({ it.second }, { it.first.name }))
             .map { (med, minute) ->
@@ -81,7 +81,11 @@ fun TodayScreen(
             item {
                 EmptyState(
                     title = if (meds.isEmpty()) "هنوز دارویی ثبت نکرده‌اید" else "برای امروز نوبتی نیست",
-                    body = "دارو و ساعت‌های مصرفش را اضافه کنید تا سر وقت با اعلان یادآوری شود.",
+                    body = if (meds.any { it.active }) {
+                        "داروهای شما امروز نوبتی ندارند. برای داروی تازه، آن را با ساعت و روزهای مصرفش اضافه کنید."
+                    } else {
+                        "دارو و ساعت‌های مصرفش را اضافه کنید تا سر وقت با اعلان یادآوری شود."
+                    },
                     action = "افزودن دارو",
                     onAction = onAdd,
                 )

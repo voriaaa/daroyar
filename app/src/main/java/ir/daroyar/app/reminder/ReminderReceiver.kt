@@ -19,17 +19,19 @@ class ReminderReceiver : BroadcastReceiver() {
         val store = MedStore.get(context)
         when (intent.action) {
             ReminderScheduler.ACTION_FIRE -> {
-                // Medications may have been deleted, paused or given new times since the alarm was set.
-                val due = store.meds.value.filter { it.active && minute in it.times }
-                due.filterNot { store.isTaken(it.id, date, minute) }
+                // Medications may have been deleted, paused or given new times or days since the alarm was set.
+                val meds = store.meds.value
+                val atThisTime = meds.filter { it.active && minute in it.times }
+                atThisTime.filter { it.isDueOn(date) && !store.isTaken(it.id, date, minute) }
                     .forEach { Notifier.showDose(context, it, minute, date) }
-                if (due.isNotEmpty()) {
-                    ReminderScheduler.scheduleSlot(context, minute, Schedule.following(date, minute, LocalDateTime.now()))
+                if (atThisTime.isNotEmpty()) {
+                    val next = Schedule.following(date, minute, LocalDateTime.now(), Schedule.slotDays(meds, minute))
+                    ReminderScheduler.scheduleSlot(context, minute, next)
                 }
             }
             ReminderScheduler.ACTION_SNOOZE_FIRE -> {
                 val med = store.medication(medId) ?: return
-                if (med.active && minute in med.times && !store.isTaken(medId, date, minute)) {
+                if (med.active && minute in med.times && med.isDueOn(date) && !store.isTaken(medId, date, minute)) {
                     Notifier.showDose(context, med, minute, date)
                 }
             }

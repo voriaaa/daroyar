@@ -4,8 +4,10 @@ import ir.daroyar.app.drugs.DrugDatabase
 import ir.daroyar.app.drugs.Severity
 import ir.daroyar.app.drugs.interactionRules
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 
 class DrugDatabaseTest {
 
@@ -40,5 +42,17 @@ class DrugDatabaseTest {
     @Test
     fun combosPointAtRealDrugs() {
         DrugDatabase.combos.values.flatten().forEach { assertTrue(it, it in DrugDatabase.byId) }
+    }
+
+    @Test
+    fun weeklyDrugsWarnUnlessTakenOnOneDay() {
+        val methotrexate = DrugDatabase.byId.getValue("methotrexate")
+        assertTrue(methotrexate.weekly && DrugDatabase.byId.getValue("alendronate").weekly)
+        assertFalse(DrugDatabase.byId.getValue("metformin").weekly)
+
+        assertTrue(methotrexate.tooFrequent(emptySet())) // every day
+        assertTrue(methotrexate.tooFrequent(setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)))
+        assertFalse(methotrexate.tooFrequent(setOf(DayOfWeek.SATURDAY)))
+        assertFalse(DrugDatabase.byId.getValue("metformin").tooFrequent(emptySet()))
     }
 }

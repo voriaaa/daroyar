@@ -57,8 +57,12 @@ import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.reminder.Schedule
+import ir.daroyar.app.util.PERSIAN_WEEK
 import ir.daroyar.app.util.formatMinute
 import ir.daroyar.app.util.latinDigits
+import ir.daroyar.app.util.persianName
+import java.time.DayOfWeek
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -74,6 +78,8 @@ fun EditMedScreen(
     var dose by rememberSaveable { mutableStateOf(initial.dose) }
     var notes by rememberSaveable { mutableStateOf(initial.notes) }
     var times by rememberSaveable { mutableStateOf(ArrayList(initial.times)) }
+    var specificDays by rememberSaveable { mutableStateOf(!initial.everyDay) }
+    var days by rememberSaveable { mutableStateOf(HashSet(initial.days)) }
     var trackStock by rememberSaveable { mutableStateOf(initial.stock != null) }
     var stockText by rememberSaveable { mutableStateOf(initial.stock?.toString().orEmpty()) }
     var perDoseText by rememberSaveable { mutableStateOf(initial.perDose.toString()) }
@@ -82,6 +88,16 @@ fun EditMedScreen(
 
     fun setTimes(list: List<Int>) {
         times = ArrayList(list.distinct().sorted())
+    }
+
+    fun setDays(set: Set<DayOfWeek>) {
+        days = HashSet(set)
+    }
+
+    /** Once a week on the chosen day, or on today's weekday if none or several are chosen. */
+    fun makeWeekly() {
+        specificDays = true
+        if (days.size != 1) setDays(setOf(LocalDate.now().dayOfWeek))
     }
 
     fun pickTime(start: Int, onPicked: (Int) -> Unit) {
@@ -95,9 +111,16 @@ fun EditMedScreen(
             .filter { it.rank < 3 }
     }
 
+    val scheduledDays = if (specificDays) Schedule.normalizeDays(days) else emptySet()
+    // No warning while the user is still picking days.
+    val tooFrequent = remember(matched, specificDays, days) {
+        if (specificDays && days.isEmpty()) emptyList() else matched.filter { it.tooFrequent(scheduledDays) }
+    }
+
     val stock = stockText.latinDigits().trim().toIntOrNull()
     val nameError = showErrors && name.isBlank()
     val timesError = showErrors && times.isEmpty()
+    val daysError = showErrors && specificDays && days.isEmpty()
     val stockError = showErrors && trackStock && stock == null
 
     Scaffold(
@@ -208,6 +231,44 @@ fun EditMedScreen(
                 color = if (timesError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            SectionTitle("روزهای مصرف")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !specificDays, onClick = { specificDays = false }, label = { Text("هر روز") })
+                FilterChip(selected = specificDays, onClick = { specificDays = true }, label = { Text("روزهای خاص") })
+                FilterChip(
+                    selected = specificDays && days.size == 1,
+                    onClick = { makeWeekly() },
+                    label = { Text("هفته‌ای یک بار") },
+                )
+            }
+            if (specificDays) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    PERSIAN_WEEK.forEach { day ->
+                        FilterChip(
+                            selected = day in days,
+                            onClick = { setDays(if (day in days) days - day else days + day) },
+                            label = { Text(day.persianName()) },
+                        )
+                    }
+                }
+                Text(
+                    if (days.isEmpty()) "دست‌کم یک روز را انتخاب کنید" else "فقط در روزهای انتخاب‌شده یادآوری می‌شود.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (daysError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            tooFrequent.forEach { drug ->
+                WeeklyDrugWarning(
+                    drug = drug,
+                    days = scheduledDays,
+                    actionLabel = "هفته‌ای یک بار تنظیم شود",
+                    onAction = { makeWeekly() },
+                )
+            }
+
             HorizontalDivider()
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -263,7 +324,7 @@ fun EditMedScreen(
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick = {
-                    if (name.isBlank() || times.isEmpty() || (trackStock && stock == null)) {
+                    if (name.isBlank() || times.isEmpty() || (specificDays && days.isEmpty()) || (trackStock && stock == null)) {
                         showErrors = true
                     } else {
                         onSave(
@@ -272,6 +333,7 @@ fun EditMedScreen(
                                 dose = dose.trim(),
                                 notes = notes.trim(),
                                 times = times.distinct().sorted(),
+                                days = scheduledDays,
                                 stock = if (trackStock) stock?.coerceAtLeast(0) else null,
                                 perDose = perDoseText.latinDigits().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1,
                             )

@@ -37,9 +37,13 @@ object Notifier {
         val text = buildString {
             if (med.dose.isNotBlank()) append(med.dose).append(" · ")
             append("ساعت ").append(formatMinute(minuteOfDay))
+            val drugs = DrugMatcher.match(med.name)
             // The user's own note wins; otherwise a short hint from the drug reference ("همراه غذا").
-            val hint = med.notes.ifBlank { DrugMatcher.match(med.name).firstNotNullOfOrNull { it.tip }.orEmpty() }
+            val hint = med.notes.ifBlank { drugs.firstNotNullOfOrNull { it.tip }.orEmpty() }
             if (hint.isNotBlank()) append("\n").append(hint)
+            drugs.firstOrNull { it.tooFrequent(med.days) }?.let {
+                append("\n⚠️ ").append(it.fa).append(" معمولاً فقط هفته‌ای یک بار است؛ برنامه را با پزشک یا داروساز چک کنید.")
+            }
             if (med.lowStock) append("\n⚠️ موجودی رو به اتمام است: ").append((med.stock ?: 0).fa()).append(" عدد")
         }
         val takenPi = actionIntent(context, ReminderScheduler.ACTION_TAKEN, med.id, minuteOfDay, date)

@@ -33,6 +33,7 @@ import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.util.fa
+import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
 
 /** What the app knows about one of the user's medications, and how it interacts with the others. */
@@ -94,10 +95,15 @@ fun MedInfoScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
+                    if (!med.everyDay) Text(formatDays(med.days), style = MaterialTheme.typography.bodyLarge)
                     med.stock?.let { Text("موجودی: ${it.fa()} عدد", style = MaterialTheme.typography.bodyMedium) }
                     if (med.notes.isNotBlank()) Text(med.notes, style = MaterialTheme.typography.bodyMedium)
                     if (!med.active) Text("یادآوری متوقف شده", style = MaterialTheme.typography.labelMedium)
                 }
+            }
+
+            drugs.filter { it.tooFrequent(med.days) }.forEach { drug ->
+                WeeklyDrugWarning(drug = drug, days = med.days, actionLabel = "ویرایش برنامه", onAction = onEdit)
             }
 
             if (drugs.isEmpty()) {

@@ -1,12 +1,15 @@
 package ir.daroyar.app
 
 import ir.daroyar.app.util.JalaliDate
+import ir.daroyar.app.util.PERSIAN_WEEK
 import ir.daroyar.app.util.fa
+import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
 import ir.daroyar.app.util.formatPersianDate
 import ir.daroyar.app.util.latinDigits
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 class PersianTest {
@@ -33,6 +36,16 @@ class PersianTest {
     @Test
     fun formatsDateInPersian() {
         assertEquals("سه‌شنبه ۲۸ مهر ۱۴۰۵", formatPersianDate(LocalDate.of(2026, 10, 20)))
+    }
+
+    @Test
+    fun weekStartsOnSaturdayAndDaysAreListedInThatOrder() {
+        assertEquals(DayOfWeek.SATURDAY, PERSIAN_WEEK.first())
+        assertEquals(DayOfWeek.values().toSet(), PERSIAN_WEEK.toSet())
+        assertEquals("هر روز", formatDays(emptySet()))
+        assertEquals("هر روز", formatDays(DayOfWeek.values().toSet()))
+        assertEquals("هفته‌ای یک بار: شنبه", formatDays(setOf(DayOfWeek.SATURDAY)))
+        assertEquals("شنبه، دوشنبه، جمعه", formatDays(setOf(DayOfWeek.FRIDAY, DayOfWeek.MONDAY, DayOfWeek.SATURDAY)))
     }
 
     @Test

@@ -33,6 +33,7 @@ import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.Finding
 import ir.daroyar.app.util.fa
+import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
 
 @Composable
@@ -146,11 +147,23 @@ private fun MedCard(med: Medication, onClick: () -> Unit, onToggleActive: (Boole
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    med.times.joinToString("  ·  ") { formatMinute(it) },
+                    med.times.joinToString("  ·  ") { formatMinute(it) } +
+                        if (med.everyDay) "" else "  ·  ${formatDays(med.days)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.primary,
                     fontWeight = FontWeight.Medium,
                 )
+                val weeklyDrug = remember(med.name, med.days) {
+                    DrugMatcher.match(med.name).firstOrNull { it.tooFrequent(med.days) }
+                }
+                if (weeklyDrug != null) {
+                    Text(
+                        "⚠️ ${weeklyDrug.fa} معمولاً فقط هفته‌ای یک بار است",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.error,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
                 med.stock?.let { stock ->
                     Text(
                         "موجودی: ${stock.fa()} عدد" + if (med.lowStock) " (رو به اتمام)" else "",
