@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.daroyar.app.data.MedStore
 import ir.daroyar.app.data.Medication
+import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.reminder.Notifier
 import ir.daroyar.app.reminder.ReminderScheduler
 import kotlinx.coroutines.delay
@@ -85,6 +86,8 @@ private fun AppRoot() {
 
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var editingId by rememberSaveable { mutableLongStateOf(NO_EDITOR) }
+    var viewingId by rememberSaveable { mutableLongStateOf(NO_EDITOR) }
+    val findings = remember(meds) { InteractionChecker.check(meds.filter { it.active }) }
 
     // Ticks so "late" badges and the date stay current while the app is open.
     val now by produceState(LocalDateTime.now()) {
@@ -117,6 +120,7 @@ private fun AppRoot() {
         BackHandler(onBack = close)
         EditMedScreen(
             initial = initial,
+            otherMeds = meds,
             onSave = { med ->
                 store.save(med)
                 ReminderScheduler.sync(context)
@@ -130,10 +134,24 @@ private fun AppRoot() {
                     }
                     store.delete(initial.id)
                     ReminderScheduler.sync(context)
+                    viewingId = NO_EDITOR
                     close()
                 }
             },
             onBack = close,
+        )
+    } else if (meds.any { it.id == viewingId }) {
+        val med = meds.first { it.id == viewingId }
+        BackHandler { viewingId = NO_EDITOR }
+        MedInfoScreen(
+            med = med,
+            allMeds = meds,
+            onBack = { viewingId = NO_EDITOR },
+            onEdit = { editingId = med.id },
+            onApplyTimes = { times ->
+                store.save(med.copy(times = times))
+                ReminderScheduler.sync(context)
+            },
         )
     } else {
         Scaffold(
@@ -195,6 +213,7 @@ private fun AppRoot() {
                         meds = meds,
                         taken = taken,
                         now = now,
+                        alertCount = findings.count { it.needsAttention },
                         onToggle = { med, minute, value ->
                             store.setTaken(med.id, now.toLocalDate(), minute, value)
                             if (value) {
@@ -203,10 +222,12 @@ private fun AppRoot() {
                             }
                         },
                         onAdd = { editingId = NEW_MEDICATION },
+                        onShowAlerts = { tab = 1 },
                     )
                     else -> MedsScreen(
                         meds = meds,
-                        onEdit = { editingId = it.id },
+                        findings = findings,
+                        onOpen = { viewingId = it.id },
                         onToggleActive = { med, active ->
                             store.save(med.copy(active = active))
                             ReminderScheduler.sync(context)

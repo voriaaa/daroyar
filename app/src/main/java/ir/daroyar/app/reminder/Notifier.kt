@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import ir.daroyar.app.R
 import ir.daroyar.app.data.Medication
+import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.ui.MainActivity
 import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatMinute
@@ -36,7 +37,9 @@ object Notifier {
         val text = buildString {
             if (med.dose.isNotBlank()) append(med.dose).append(" · ")
             append("ساعت ").append(formatMinute(minuteOfDay))
-            if (med.notes.isNotBlank()) append("\n").append(med.notes)
+            // The user's own note wins; otherwise a short hint from the drug reference ("همراه غذا").
+            val hint = med.notes.ifBlank { DrugMatcher.match(med.name).firstNotNullOfOrNull { it.tip }.orEmpty() }
+            if (hint.isNotBlank()) append("\n").append(hint)
             if (med.lowStock) append("\n⚠️ موجودی رو به اتمام است: ").append((med.stock ?: 0).fa()).append(" عدد")
         }
         val takenPi = actionIntent(context, ReminderScheduler.ACTION_TAKEN, med.id, minuteOfDay, date)

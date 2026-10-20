@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ir.daroyar.app.data.Medication
+import ir.daroyar.app.drugs.DrugMatcher
+import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.reminder.Schedule
 import ir.daroyar.app.util.formatMinute
 import ir.daroyar.app.util.latinDigits
@@ -61,6 +64,7 @@ import ir.daroyar.app.util.latinDigits
 @Composable
 fun EditMedScreen(
     initial: Medication,
+    otherMeds: List<Medication>,
     onSave: (Medication) -> Unit,
     onDelete: (() -> Unit)?,
     onBack: () -> Unit,
@@ -82,6 +86,13 @@ fun EditMedScreen(
 
     fun pickTime(start: Int, onPicked: (Int) -> Unit) {
         TimePickerDialog(context, { _, hour, minute -> onPicked(hour * 60 + minute) }, start / 60, start % 60, true).show()
+    }
+
+    val matched = remember(name) { DrugMatcher.match(name) }
+    val suggestions = remember(name) { if (matched.isEmpty()) DrugMatcher.suggest(name) else emptyList() }
+    val warnings = remember(name, times, otherMeds) {
+        InteractionChecker.checkAgainst(initial.copy(name = name, times = times.toList()), otherMeds.filter { it.active })
+            .filter { it.rank < 3 }
     }
 
     val stock = stockText.latinDigits().trim().toIntOrNull()
@@ -128,6 +139,20 @@ fun EditMedScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (suggestions.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    suggestions.forEach { drug ->
+                        AssistChip(onClick = { name = drug.fa }, label = { Text(drug.fa) })
+                    }
+                }
+            }
+            matched.forEach { drug ->
+                DrugInfoCard(
+                    drug = drug,
+                    currentTimes = times,
+                    onUseSuggestedTimes = if (matched.size == 1) ({ setTimes(it) }) else null,
+                )
+            }
             OutlinedTextField(
                 value = dose,
                 onValueChange = { dose = it },
@@ -228,6 +253,12 @@ fun EditMedScreen(
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (warnings.isNotEmpty()) {
+                SectionTitle("هشدار با داروهای دیگر شما")
+                warnings.forEach { FindingCard(it) }
+                Disclaimer()
+            }
 
             Spacer(Modifier.height(4.dp))
             Button(

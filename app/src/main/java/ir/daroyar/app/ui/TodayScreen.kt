@@ -51,8 +51,10 @@ fun TodayScreen(
     meds: List<Medication>,
     taken: Set<String>,
     now: LocalDateTime,
+    alertCount: Int,
     onToggle: (Medication, Int, Boolean) -> Unit,
     onAdd: () -> Unit,
+    onShowAlerts: () -> Unit,
 ) {
     val today = now.toLocalDate()
     val doses = remember(meds, taken, now) {
@@ -73,6 +75,7 @@ fun TodayScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { SummaryCard(formatPersianDate(today), takenCount, doses.size) }
+        if (alertCount > 0) item { AlertsCard(alertCount, onShowAlerts) }
         if (lowStock.isNotEmpty()) item { LowStockCard(lowStock) }
         if (doses.isEmpty()) {
             item {
@@ -125,6 +128,27 @@ private fun SummaryCard(date: String, taken: Int, total: Int) {
                         .height(8.dp),
                     trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AlertsCard(count: Int, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Warning, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text("${count.fa()} هشدار دربارهٔ داروهای شما", fontWeight = FontWeight.Bold)
+                Text("تداخل دارویی یا فاصلهٔ زمانی نامناسب؛ برای دیدن جزئیات بزنید.", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
