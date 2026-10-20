@@ -94,6 +94,14 @@ class DrugMatcherTest {
     fun suggestsWhileTyping() {
         assertTrue(DrugMatcher.suggest("متف").any { it.id == "metformin" })
         assertTrue(DrugMatcher.suggest("آموکسی").map { it.id }.containsAll(listOf("amoxicillin", "co_amoxiclav")))
-        assertTrue(DrugMatcher.suggest("م").isEmpty())
+        assertEquals("metformin", DrugMatcher.suggest("متف").first().id)
+        // From the very first letter, Persian names that start with it come first.
+        val m = DrugMatcher.suggest("م")
+        assertEquals(8, m.size)
+        assertTrue(m.joinToString { it.fa }, m.all { DrugMatcher.normalize(it.fa).startsWith("م") })
+        // Brand and English names work too.
+        assertTrue(DrugMatcher.suggest("zol").any { it.id == "sertraline" })
+        assertTrue(DrugMatcher.suggest("زولو").any { it.id == "sertraline" })
+        assertTrue(DrugMatcher.suggest("").isEmpty())
     }
 }

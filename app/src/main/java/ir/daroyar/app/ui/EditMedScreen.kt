@@ -53,10 +53,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
@@ -146,8 +148,14 @@ fun EditMedScreen(
 
     fun pickDrug(drug: Drug) {
         name = drug.fa
+        namePicked = true
     }
-    val suggestions = remember(name) { if (matched.isEmpty()) DrugMatcher.suggest(name) else emptyList() }
+    // Autocomplete: shown while the name field has focus, until a name is picked or typed in full.
+    var nameFocused by remember { mutableStateOf(false) }
+    var namePicked by rememberSaveable { mutableStateOf(initial.name.isNotBlank()) }
+    val suggestions = remember(name) { DrugMatcher.suggest(name) }
+    val showSuggestions = nameFocused && !namePicked && suggestions.isNotEmpty() &&
+        suggestions.none { it.fa == name.trim() }
     val warnings = remember(name, times, otherMeds) {
         InteractionChecker.checkAgainst(initial.copy(name = name, times = times.toList()), otherMeds.filter { it.active })
             .filter { it.rank < 3 }
@@ -214,21 +222,22 @@ fun EditMedScreen(
             }
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    namePicked = false
+                },
                 label = { Text("نام $noun *") },
                 placeholder = { Text(if (kind == Kind.SUPPLEMENT) "مثلاً ویتامین د یا امگا ۳" else "مثلاً متفورمین ۵۰۰") },
                 isError = nameError,
                 supportingText = if (nameError) ({ Text("نام $noun را وارد کنید") }) else null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { nameFocused = it.isFocused },
             )
-            if (suggestions.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    suggestions.forEach { drug ->
-                        AssistChip(onClick = { pickDrug(drug) }, label = { Text(drug.fa) })
-                    }
-                }
+            if (showSuggestions) {
+                SuggestionList(suggestions, onPick = { pickDrug(it) })
             }
             if (kind == Kind.SUPPLEMENT && name.isBlank()) {
                 Text(
@@ -457,6 +466,59 @@ fun EditMedScreen(
                 TextButton(onClick = { confirmDelete = false }) { Text("انصراف") }
             },
         )
+    }
+}
+
+/** Drop-down style list under the name field; one row per drug with its Persian and English name and use. */
+@Composable
+private fun SuggestionList(drugs: List<Drug>, onPick: (Drug) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Card(
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    ) {
+        Column {
+            drugs.forEachIndexed { i, drug ->
+                if (i > 0) HorizontalDivider(color = colors.outlineVariant)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onPick(drug) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        if (drug.isSupplement) Icons.Outlined.Spa else Icons.Outlined.Medication,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(drug.fa, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            if (drug.en != drug.fa) {
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    drug.en,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        Text(
+                            drug.use,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

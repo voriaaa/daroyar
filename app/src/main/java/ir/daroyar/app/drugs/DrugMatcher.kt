@@ -125,20 +125,35 @@ object DrugMatcher {
             .distinct()
     }
 
-    /** Drug names to offer while the user is still typing [query]. */
-    fun suggest(query: String, limit: Int = 6): List<Drug> {
+    private class Keys(val drug: Drug, val fa: String, val all: List<String>)
+
+    private val detailedKeys: List<Keys> by lazy {
+        DrugDatabase.drugs.map { drug ->
+            Keys(drug, compact(normalize(drug.fa)), (listOf(drug.fa, drug.en) + drug.aliases).map { compact(normalize(it)) })
+        }
+    }
+
+    /**
+     * Names to offer while the user is still typing [query], best first: detailed entries whose
+     * Persian name starts with it, then any of their names (English, brand) starting with it, then
+     * names containing it, then index names by prefix (and, from three letters on, by substring).
+     */
+    fun suggest(query: String, limit: Int = 8): List<Drug> {
         val q = compact(normalize(query))
-        if (q.length < 2) return emptyList()
-        fun keys(drug: Drug) = (listOf(drug.fa, drug.en) + drug.aliases).map { compact(normalize(it)) }
-        val starts = DrugDatabase.drugs.filter { drug -> keys(drug).any { it.startsWith(q) } }
-        val contains = DrugDatabase.drugs.filter { drug -> keys(drug).any { q in it } }
-        val detailed = (starts + contains).distinct()
-        if (detailed.size >= limit) return detailed.take(limit)
-        // Index names only by prefix: substring hits among thousands of brands would be noise.
-        val indexed = indexKeys.asSequence()
-            .filter { (key, _) -> key.startsWith(q) }
-            .map { it.value.first() }
-            .take(limit - detailed.size)
-        return (detailed + indexed).distinct().take(limit)
+        if (q.isEmpty()) return emptyList()
+        val result = LinkedHashSet<Drug>()
+        fun offer(drugs: Sequence<Drug>) {
+            for (d in drugs) {
+                if (result.size >= limit) return
+                result += d
+            }
+        }
+        offer(detailedKeys.asSequence().filter { it.fa.startsWith(q) }.sortedBy { it.fa.length }.map { it.drug })
+        offer(detailedKeys.asSequence().filter { k -> k.all.any { it.startsWith(q) } }.map { it.drug })
+        if (q.length >= 2) offer(detailedKeys.asSequence().filter { k -> k.all.any { q in it } }.map { it.drug })
+        val index = indexKeys
+        offer(index.asSequence().filter { (key, _) -> key.startsWith(q) }.sortedBy { it.key.length }.map { it.value.first() })
+        if (q.length >= 3) offer(index.asSequence().filter { (key, _) -> q in key }.map { it.value.first() })
+        return result.toList()
     }
 }
