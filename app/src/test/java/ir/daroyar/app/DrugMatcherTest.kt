@@ -8,7 +8,8 @@ import org.junit.Test
 
 class DrugMatcherTest {
 
-    private fun ids(name: String) = DrugMatcher.match(name).map { it.id }
+    // The detailed reference only, so results don't depend on whether another test loaded the name index.
+    private fun ids(name: String) = DrugMatcher.matchDetailed(name).map { it.id }
 
     @Test
     fun everyDrugIsFoundByItsOwnNames() {

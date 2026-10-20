@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ir.daroyar.app.drugs.Drug
+import ir.daroyar.app.drugs.DrugIndex
+import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.drugs.Finding
 import ir.daroyar.app.drugs.Severity
 import ir.daroyar.app.util.fa
@@ -60,9 +62,14 @@ fun DrugInfoCard(
                 Spacer(Modifier.width(8.dp))
                 Text(drug.en, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
-            InfoSection("برای چه مفید است", drug.use)
-            InfoSection("دربارهٔ دارو", drug.about)
-            InfoSection("بهترین زمان مصرف", drug.timing)
+            if (drug.isIndexed) {
+                InfoSection("گروه دارویی", drug.use)
+                InfoSection("زمان مصرف (توصیهٔ کلی این گروه)", drug.timing)
+            } else {
+                InfoSection("برای چه مفید است", drug.use)
+                InfoSection("دربارهٔ دارو", drug.about)
+                InfoSection("بهترین زمان مصرف", drug.timing)
+            }
 
             val suggested = drug.suggestedTimes
             if (suggested != null && onUseSuggestedTimes != null && suggested != currentTimes) {
@@ -81,6 +88,14 @@ fun DrugInfoCard(
                     Spacer(Modifier.width(6.dp))
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.tertiary)
                 }
+            }
+            if (drug.isIndexed) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "این نام در فهرست داروهای ایران هست، ولی اطلاعات کامل، ساعت پیشنهادی و بررسی تداخل آن هنوز در دارویار نیست. ${DrugIndex.SOURCE}.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
             }
         }
     }

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.InteractionChecker
+import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
@@ -130,7 +131,11 @@ fun MedInfoScreen(
                 )
                 if (findings.isEmpty()) {
                     Text(
-                        "تداخل مهمی با داروهای ثبت‌شدهٔ شما پیدا نشد.",
+                        if (drugs.all { it.isIndexed }) {
+                            "تداخل‌های این ${med.noun} در دارویار بررسی نمی‌شود؛ دربارهٔ مصرف هم‌زمان با داروهای دیگرتان از داروساز بپرسید."
+                        } else {
+                            "تداخل مهمی با داروهای ثبت‌شدهٔ شما پیدا نشد."
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

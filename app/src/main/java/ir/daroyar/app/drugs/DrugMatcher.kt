@@ -8,6 +8,9 @@ package ir.daroyar.app.drugs
  * and units don't get in the way because names are found as substrings of the text. Longer names win over shorter ones
  * they contain ("اس‌سیتالوپرام" is escitalopram, not citalopram), and very short names
  * ("آهن", "روی") must stand as a whole word to avoid matching inside other words.
+ *
+ * Names with no detailed entry fall back to [DrugIndex]; those must match whole words, because the
+ * index holds thousands of brand names, some of them ordinary words.
  */
 object DrugMatcher {
 
@@ -58,8 +61,39 @@ object DrugMatcher {
 
     private fun compact(normalized: String) = normalized.replace(" ", "")
 
-    /** Drugs contained in [name], in the order they appear; empty when none is recognized. */
+    /** Index names (normalized, spaces removed) to their drugs; filled once [DrugIndex] has loaded. */
+    @Volatile
+    private var indexKeys: Map<String, List<Drug>> = emptyMap()
+
+    private const val MAX_INDEX_WORDS = 6
+
+    internal fun onIndexLoaded() {
+        indexKeys = DrugIndex.drugs
+            .flatMap { drug -> (listOf(drug.fa, drug.en) + drug.aliases).map { compact(normalize(it)) to drug } }
+            .filter { it.first.length >= 3 }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, drugs) -> drugs.distinct() }
+    }
+
+    /**
+     * Drugs contained in [name], in the order they appear; empty when none is recognized.
+     * Detailed entries win; otherwise the longest run of whole words that is an index name.
+     */
     fun match(name: String): List<Drug> {
+        val detailed = matchDetailed(name)
+        val index = indexKeys
+        if (detailed.isNotEmpty() || index.isEmpty()) return detailed
+        val tokens = normalize(name).split(' ').filter { it.isNotEmpty() }
+        for (len in minOf(MAX_INDEX_WORDS, tokens.size) downTo 1) {
+            for (i in 0..tokens.size - len) {
+                index[tokens.subList(i, i + len).joinToString("")]?.let { return listOf(it.first()) }
+            }
+        }
+        return emptyList()
+    }
+
+    /** Only the detailed reference ([DrugDatabase]), never the name index. */
+    fun matchDetailed(name: String): List<Drug> {
         val norm = normalize(name)
         if (norm.isEmpty()) return emptyList()
         val text = compact(norm)
@@ -98,6 +132,13 @@ object DrugMatcher {
         fun keys(drug: Drug) = (listOf(drug.fa, drug.en) + drug.aliases).map { compact(normalize(it)) }
         val starts = DrugDatabase.drugs.filter { drug -> keys(drug).any { it.startsWith(q) } }
         val contains = DrugDatabase.drugs.filter { drug -> keys(drug).any { q in it } }
-        return (starts + contains).distinct().take(limit)
+        val detailed = (starts + contains).distinct()
+        if (detailed.size >= limit) return detailed.take(limit)
+        // Index names only by prefix: substring hits among thousands of brands would be noise.
+        val indexed = indexKeys.asSequence()
+            .filter { (key, _) -> key.startsWith(q) }
+            .map { it.value.first() }
+            .take(limit - detailed.size)
+        return (detailed + indexed).distinct().take(limit)
     }
 }

@@ -33,6 +33,7 @@ import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.Finding
+import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
@@ -45,7 +46,8 @@ fun MedsScreen(
     onToggleActive: (Medication, Boolean) -> Unit,
     onAdd: (Kind) -> Unit,
 ) {
-    val unknown = remember(meds) { meds.filter { it.active && DrugMatcher.match(it.name).isEmpty() } }
+    // Index-only names are recognized but their interactions aren't checked.
+    val unknown = remember(meds) { meds.filter { it.active && DrugMatcher.match(it.name).none { d -> !d.isIndexed } } }
     var showSpacingOk by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
@@ -80,7 +82,7 @@ fun MedsScreen(
             if (unknown.isNotEmpty()) {
                 item {
                     Text(
-                        "این موارد در بانک دارویار نیستند و بررسی نشدند: " + unknown.joinToString("، ") { it.name },
+                        "تداخل این موارد در دارویار بررسی نمی‌شود: " + unknown.joinToString("، ") { it.name },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

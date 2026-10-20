@@ -64,6 +64,7 @@ import ir.daroyar.app.drugs.Drug
 import ir.daroyar.app.drugs.DrugDatabase
 import ir.daroyar.app.drugs.DrugMatcher
 import ir.daroyar.app.drugs.InteractionChecker
+import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.reminder.Schedule
 import ir.daroyar.app.util.PERSIAN_WEEK
 import ir.daroyar.app.util.formatMinute
@@ -309,7 +310,11 @@ fun EditMedScreen(
                     "⏰ دارویار بهترین ساعت مصرف «$autoFor» را تنظیم کرد. اگر این ساعت برایتان مناسب نیست، روی آن بزنید و عوضش کنید، یا ساعت دیگری اضافه کنید.",
                 )
                 asNeeded != null && times.isEmpty() -> AutoTimesNote(
-                    "«${asNeeded.fa}» معمولاً در صورت نیاز یا طبق نسخه مصرف می‌شود و ساعت ثابتی ندارد؛ اگر پزشک نوبت ثابت گفته، ساعت‌ها را خودتان اضافه کنید.",
+                    if (asNeeded.isIndexed) {
+                        "برای «${asNeeded.fa}» ساعت پیشنهادی در دارویار ثبت نشده؛ طبق نسخه یا بروشور، ساعت‌های مصرف را خودتان اضافه کنید."
+                    } else {
+                        "«${asNeeded.fa}» معمولاً در صورت نیاز یا طبق نسخه مصرف می‌شود و ساعت ثابتی ندارد؛ اگر پزشک نوبت ثابت گفته، ساعت‌ها را خودتان اضافه کنید."
+                    },
                 )
                 else -> Text(
                     "برای تغییر هر ساعت روی آن بزنید.",
