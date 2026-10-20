@@ -1,36 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon: a capsule with a "taken" check badge, inside the 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:pivotX="50"
-        android:pivotY="52"
+        android:pivotX="54"
+        android:pivotY="54"
         android:rotation="-45">
-        <!-- left half of the capsule (white) -->
+        <!-- soft shadow -->
+        <path
+            android:fillColor="#26000000"
+            android:pathData="M41,46 L67,46 A10,10 0 0,1 67,66 L41,66 A10,10 0 0,1 41,46 Z" />
+        <!-- white half -->
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M50,42 L40,42 A10,10 0 0,0 40,62 L50,62 Z" />
-        <!-- right half of the capsule (mint) -->
+            android:pathData="M54,44 L40,44 A10,10 0 0,0 40,64 L54,64 Z" />
+        <!-- mint half -->
         <path
             android:fillColor="#B8F2E6"
-            android:pathData="M50,42 L60,42 A10,10 0 0,1 60,62 L50,62 Z" />
+            android:pathData="M54,44 L68,44 A10,10 0 0,1 68,64 L54,64 Z" />
+        <!-- shine -->
+        <path
+            android:fillColor="#99FFFFFF"
+            android:pathData="M37,47.5 L46,47.5 A1.5,1.5 0 0,1 46,50.5 L37,50.5 A1.5,1.5 0 0,1 37,47.5 Z" />
         <path
             android:fillColor="#00000000"
-            android:pathData="M50,43.5 L50,60.5"
-            android:strokeWidth="1.5"
-            android:strokeColor="#0F8B7D" />
+            android:pathData="M54,45 L54,63"
+            android:strokeWidth="1.2"
+            android:strokeColor="#330E6E86" />
     </group>
-    <!-- bell badge, lower right (kept inside the 66dp safe zone) -->
-    <group
-        android:translateX="-4"
-        android:translateY="30">
-        <path
-            android:fillColor="#FFC857"
-            android:pathData="M64,40 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" />
-        <path
-            android:fillColor="#0F8B7D"
-            android:pathData="M74,33.5 c-2.6,0 -4.2,2 -4.2,4.6 v3.4 l-1.6,1.8 h11.6 l-1.6,-1.8 v-3.4 c0,-2.6 -1.6,-4.6 -4.2,-4.6 Z M72.4,44.4 a1.6,1.6 0 0,0 3.2,0 Z" />
-    </group>
+    <!-- check badge, lower right -->
+    <path
+        android:fillColor="#FFC857"
+        android:pathData="M60.5,70 a9.5,9.5 0 1,0 19,0 a9.5,9.5 0 1,0 -19,0 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M65.6,70.3 L68.8,73.4 L74.6,67"
+        android:strokeWidth="2.6"
+        android:strokeColor="#0B5F73"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>

@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.daroyar.app.data.MedStore
@@ -66,6 +67,16 @@ import java.time.LocalDateTime
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The capsule grows a little and the splash fades out into the app.
+        installSplashScreen().setOnExitAnimationListener { splash ->
+            // Some Android 12 launches have no icon view; the fade alone is fine then.
+            runCatching { splash.iconView.animate().scaleX(1.25f).scaleY(1.25f).setDuration(300L).start() }
+            splash.view.animate()
+                .alpha(0f)
+                .setDuration(300L)
+                .withEndAction { splash.remove() }
+                .start()
+        }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
