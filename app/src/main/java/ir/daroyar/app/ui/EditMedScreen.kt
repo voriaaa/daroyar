@@ -96,6 +96,8 @@ fun EditMedScreen(
     var perDoseText by rememberSaveable { mutableStateOf(initial.perDose.toString()) }
     var showErrors by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    // False while the user is typing a name; the autocomplete list shows only then.
+    var namePicked by rememberSaveable { mutableStateOf(initial.name.isNotBlank()) }
     var kind by rememberSaveable { mutableStateOf(initial.kind) }
     var kindTouched by rememberSaveable { mutableStateOf(false) }
     val noun = kind.noun
@@ -152,7 +154,6 @@ fun EditMedScreen(
     }
     // Autocomplete: shown while the name field has focus, until a name is picked or typed in full.
     var nameFocused by remember { mutableStateOf(false) }
-    var namePicked by rememberSaveable { mutableStateOf(initial.name.isNotBlank()) }
     val suggestions = remember(name) { DrugMatcher.suggest(name) }
     val showSuggestions = nameFocused && !namePicked && suggestions.isNotEmpty() &&
         suggestions.none { it.fa == name.trim() }
