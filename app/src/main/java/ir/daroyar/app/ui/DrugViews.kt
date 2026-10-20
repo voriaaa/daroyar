@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ir.daroyar.app.drugs.Drug
-import ir.daroyar.app.drugs.DrugIndex
 import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.drugs.Finding
 import ir.daroyar.app.drugs.Severity
@@ -92,7 +91,7 @@ fun DrugInfoCard(
             if (drug.isIndexed) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "این نام در فهرست داروهای ایران هست، ولی اطلاعات کامل، ساعت پیشنهادی و بررسی تداخل آن هنوز در دارویار نیست. ${DrugIndex.SOURCE}.",
+                    "این نام در فهرست داروهای ایران هست، ولی اطلاعات کامل، ساعت پیشنهادی و بررسی تداخل آن هنوز در دارویار نیست.",
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                 )

@@ -1,10 +1,13 @@
 package ir.daroyar.app
 
+import ir.daroyar.app.data.DateRange
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.reminder.DoseStatus
 import ir.daroyar.app.reminder.Schedule
+import ir.daroyar.app.util.JalaliDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
@@ -129,6 +132,11 @@ class ScheduleTest {
         assertTrue(weekly.copy(days = emptySet()).isDueOn(LocalDate.of(2026, 10, 25)))
     }
 
+    private val week = (0L until 7L).map { LocalDate.of(2026, 10, 24).plusDays(it) } // Saturday to Friday
+
+    private fun slotDays(meds: List<Medication>, minute: Int) =
+        week.filter { Schedule.slotDueOn(meds, minute, it) }.map { it.dayOfWeek }.toSet()
+
     @Test
     fun slotRingsOnTheUnionOfItsMedicationsDays() {
         val sat = Medication(id = 1, name = "a", times = listOf(eight), days = setOf(SATURDAY))
@@ -136,12 +144,101 @@ class ScheduleTest {
         val daily = Medication(id = 3, name = "c", times = listOf(eight))
         val otherTime = Medication(id = 4, name = "d", times = listOf(9 * 60))
 
-        assertEquals(setOf(SATURDAY, MONDAY), Schedule.slotDays(listOf(sat, mon, otherTime), eight))
-        assertEquals(setOf(MONDAY), Schedule.slotDays(listOf(sat, mon), 20 * 60))
+        assertEquals(setOf(SATURDAY, MONDAY), slotDays(listOf(sat, mon, otherTime), eight))
+        assertEquals(setOf(MONDAY), slotDays(listOf(sat, mon), 20 * 60))
         // One daily medication at that time makes the slot daily.
-        assertEquals(emptySet<DayOfWeek>(), Schedule.slotDays(listOf(sat, mon, daily), eight))
+        assertEquals(DayOfWeek.values().toSet(), slotDays(listOf(sat, mon, daily), eight))
         // Paused medications don't count.
-        assertEquals(setOf(SATURDAY), Schedule.slotDays(listOf(sat, daily.copy(active = false)), eight))
+        assertEquals(setOf(SATURDAY), slotDays(listOf(sat, daily.copy(active = false)), eight))
+    }
+
+    // 1 Aban 1405 is 2026-10-23; 21 Mehr 1405 is 2026-10-13.
+
+    @Test
+    fun oneOffRangeIsDueOnlyBetweenItsDays() {
+        val range = DateRange(LocalDate.of(2026, 10, 13), LocalDate.of(2026, 10, 24))
+        val med = Medication(id = 1, name = "x", times = listOf(eight), range = range)
+        assertFalse(med.isDueOn(LocalDate.of(2026, 10, 12)))
+        assertTrue(med.isDueOn(LocalDate.of(2026, 10, 13)))
+        assertTrue(med.isDueOn(LocalDate.of(2026, 10, 24)))
+        assertFalse(med.isDueOn(LocalDate.of(2026, 10, 25)))
+        assertTrue(range.endedBefore(LocalDate.of(2026, 10, 25)))
+        assertEquals(12, range.length)
+    }
+
+    @Test
+    fun monthlyRangeRepeatsOnTheSameJalaliDays() {
+        // 21 Mehr to 2 Aban, then 21 Aban to 2 Azar and so on.
+        val start = JalaliDate(1405, 7, 21).toLocalDate()
+        val end = JalaliDate(1405, 8, 2).toLocalDate()
+        val range = DateRange(start, end, monthly = true)
+        assertEquals(12, range.length)
+        assertTrue(JalaliDate(1405, 8, 2).toLocalDate() in range)
+        assertFalse(JalaliDate(1405, 8, 3).toLocalDate() in range)
+        assertFalse(JalaliDate(1405, 8, 20).toLocalDate() in range)
+        assertTrue(JalaliDate(1405, 8, 21).toLocalDate() in range)
+        assertTrue(JalaliDate(1405, 9, 1).toLocalDate() in range)
+        assertFalse(JalaliDate(1405, 9, 3).toLocalDate() in range)
+        assertTrue(JalaliDate(1406, 1, 25).toLocalDate() in range)
+        // Not before it was first set.
+        assertFalse(JalaliDate(1405, 6, 25).toLocalDate() in range)
+        assertFalse(range.endedBefore(LocalDate.of(2030, 1, 1)))
+    }
+
+    @Test
+    fun monthlyRangeOnThe31stUsesTheLastDayOfShorterMonths() {
+        val start = JalaliDate(1405, 6, 31).toLocalDate()
+        val range = DateRange(start, start.plusDays(2), monthly = true)
+        // Mehr has 30 days, so its span starts on the 30th.
+        assertFalse(JalaliDate(1405, 7, 29).toLocalDate() in range)
+        assertTrue(JalaliDate(1405, 7, 30).toLocalDate() in range)
+        assertTrue(JalaliDate(1405, 8, 2).toLocalDate() in range)
+        assertFalse(JalaliDate(1405, 8, 3).toLocalDate() in range)
+    }
+
+    @Test
+    fun slotFollowsTheDateRangeAndStopsAfterIt() {
+        val range = DateRange(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 3))
+        val med = Medication(id = 1, name = "x", times = listOf(eight), range = range)
+        val now = LocalDateTime.of(2026, 10, 20, 9, 0)
+        assertEquals(LocalDateTime.of(2026, 11, 1, 8, 0), Schedule.nextSlot(listOf(med), eight, now))
+        val fired = LocalDate.of(2026, 11, 3)
+        assertNull(Schedule.followingSlot(listOf(med), eight, fired, fired.atTime(8, 0, 1)))
+        assertNull(Schedule.nextSlot(listOf(med), eight, LocalDateTime.of(2026, 11, 4, 0, 0)))
+    }
+
+    @Test
+    fun monthlySlotJumpsToNextMonthsSpan() {
+        val start = JalaliDate(1405, 7, 21).toLocalDate()
+        val range = DateRange(start, start.plusDays(1), monthly = true) // 21st and 22nd
+        val med = Medication(id = 1, name = "x", times = listOf(eight), range = range)
+        val fired = JalaliDate(1405, 7, 22).toLocalDate()
+        assertEquals(
+            JalaliDate(1405, 8, 21).toLocalDate().atTime(8, 0),
+            Schedule.followingSlot(listOf(med), eight, fired, fired.atTime(8, 0, 1)),
+        )
+    }
+
+    @Test
+    fun rangeIsSavedAndRestored() {
+        val range = DateRange(LocalDate.of(2026, 10, 13), LocalDate.of(2026, 10, 24), monthly = true)
+        val med = Medication(id = 1, name = "x", times = listOf(eight), range = range)
+        assertEquals(med, Medication.fromJson(med.toJson()))
+        assertNull(Medication.fromJson(med.copy(range = null).toJson()).range)
+    }
+
+    @Test
+    fun jalaliDatesRoundTrip() {
+        var d = LocalDate.of(2024, 1, 1)
+        while (d.year < 2031) {
+            assertEquals(d, JalaliDate.from(d).toLocalDate())
+            d = d.plusDays(1)
+        }
+        assertEquals(LocalDate.of(2026, 10, 23), JalaliDate(1405, 8, 1).toLocalDate())
+        assertEquals(30, JalaliDate.monthLength(1403, 12)) // 1403 is a leap year
+        assertEquals(29, JalaliDate.monthLength(1404, 12))
+        assertEquals(JalaliDate(1406, 1, 31), JalaliDate(1405, 12, 31).plusMonths(1))
+        assertEquals(JalaliDate(1405, 12, 29), JalaliDate(1405, 11, 30).plusMonths(1))
     }
 
     @Test

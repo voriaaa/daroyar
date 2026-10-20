@@ -10,10 +10,12 @@ import java.time.LocalDate
 enum class Kind(val noun: String) { MEDICINE("دارو"), SUPPLEMENT("مکمل") }
 
 /**
- * A medicine or supplement taken at fixed times, every day or on some days of the week.
+ * A medicine or supplement taken at fixed times, every day or on some days of the week, optionally
+ * only within a date range.
  *
  * @property times dose times as minutes since midnight, sorted and distinct.
  * @property days weekdays the medicine is taken on; empty means every day (never all seven).
+ * @property range dates the medicine is limited to (one-off or every month); null means no limit.
  * @property stock units left (pills, sachets…); null when the user doesn't track it.
  * @property perDose units consumed by one dose, used to count [stock] down.
  */
@@ -28,6 +30,7 @@ data class Medication(
     val active: Boolean = true,
     val days: Set<DayOfWeek> = emptySet(),
     val kind: Kind = Kind.MEDICINE,
+    val range: DateRange? = null,
 ) {
     val isSupplement: Boolean get() = kind == Kind.SUPPLEMENT
 
@@ -36,7 +39,7 @@ data class Medication(
 
     val everyDay: Boolean get() = days.isEmpty()
 
-    fun isDueOn(date: LocalDate): Boolean = Schedule.isDue(days, date)
+    fun isDueOn(date: LocalDate): Boolean = Schedule.isDue(days, date) && (range == null || date in range)
 
     /** Fewer than three dosing days' worth of doses left. */
     val lowStock: Boolean
@@ -53,6 +56,7 @@ data class Medication(
         .put("active", active)
         .put("days", JSONArray(days.sorted().map { it.value }))
         .put("kind", if (isSupplement) "supplement" else "medicine")
+        .apply { range?.let { put("range", it.toJson()) } }
 
     companion object {
         fun fromJson(o: JSONObject): Medication {
@@ -73,6 +77,8 @@ data class Medication(
                 ),
                 // Saved before supplements existed: a medicine.
                 kind = if (o.optString("kind") == "supplement") Kind.SUPPLEMENT else Kind.MEDICINE,
+                // Saved before date ranges existed: no limit.
+                range = DateRange.fromJson(o.optJSONObject("range")),
             )
         }
     }

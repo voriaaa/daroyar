@@ -17,8 +17,9 @@ import java.time.ZoneId
  * on that day and sets the slot's next alarm. Sharing one alarm per slot matters in Doze, where
  * Android delays an app's back-to-back exact alarms by several minutes.
  *
- * A slot rings only on the weekdays some medication needs it ([Schedule.slotDays]), so a time used
- * only by a weekly drug wakes the phone once a week.
+ * A slot rings only on the days some medication needs it ([Schedule.slotDueOn]), so a time used
+ * only by a weekly drug wakes the phone once a week, and one used only within a date range stops
+ * after the range.
  */
 object ReminderScheduler {
 
@@ -40,10 +41,15 @@ object ReminderScheduler {
     @Synchronized
     fun sync(context: Context) {
         val meds = MedStore.get(context).meds.value
-        val wanted = meds
+        val now = LocalDateTime.now()
+        // A time whose medications' date ranges are all over needs no alarm.
+        val next = meds
             .filter { it.active }
             .flatMap { it.times }
             .toSet()
+            .mapNotNull { minute -> Schedule.nextSlot(meds, minute, now)?.let { minute to it } }
+            .toMap()
+        val wanted = next.keys
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val previous = prefs.getString(KEY_SLOTS, "").orEmpty()
             .split(',').mapNotNull { it.toIntOrNull() }.toSet()
@@ -58,10 +64,7 @@ object ReminderScheduler {
                 it.cancel()
             }
         }
-        val now = LocalDateTime.now()
-        wanted.forEach { minute ->
-            scheduleSlot(context, minute, Schedule.nextAfter(now, minute, Schedule.slotDays(meds, minute)))
-        }
+        next.forEach { (minute, at) -> scheduleSlot(context, minute, at) }
         prefs.edit().putString(KEY_SLOTS, wanted.sorted().joinToString(",")).apply()
     }
 

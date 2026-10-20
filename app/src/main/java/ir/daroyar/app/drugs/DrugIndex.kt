@@ -14,7 +14,9 @@ import java.io.InputStream
 object DrugIndex {
 
     const val TAG = "indexed"
-    const val SOURCE = "فهرست نام داروها از سایت دارویاب (darooyab.ir)"
+
+    /** A herbal brand product: its group in the list is only its maker. */
+    internal const val BRAND_TAG = "herbal_brand"
 
     @Volatile
     var drugs: List<Drug> = emptyList()
@@ -43,6 +45,7 @@ object DrugIndex {
         val advice = adviceFor(kind, group)
         val tags = buildSet {
             add(TAG)
+            if (kind == "B") add(BRAND_TAG)
             if (kind != "G" || SUPPLEMENT_GROUPS.any { it in group }) add("supplement")
         }
         return Drug(
@@ -296,5 +299,8 @@ object DrugIndex {
             ?: Advice("از گروه «$group».", PRESCRIBED, ASK_PHARMACIST)
     }
 }
+
+/** Whether [Drug.use] and the group say what the drug is for (not so for a herbal brand, whose group is its maker). */
+internal fun DrugIndex.groupDescribesUse(drug: Drug): Boolean = DrugIndex.BRAND_TAG !in drug.tags
 
 val Drug.isIndexed: Boolean get() = DrugIndex.TAG in tags

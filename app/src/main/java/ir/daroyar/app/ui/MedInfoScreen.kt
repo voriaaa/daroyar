@@ -36,6 +36,8 @@ import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
+import ir.daroyar.app.util.formatRange
+import java.time.LocalDate
 
 /** What the app knows about one of the user's medications, and how it interacts with the others. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,6 +99,12 @@ fun MedInfoScreen(
                         fontWeight = FontWeight.Bold,
                     )
                     if (!med.everyDay) Text(formatDays(med.days), style = MaterialTheme.typography.bodyLarge)
+                    med.range?.let {
+                        Text(
+                            formatRange(it) + if (it.endedBefore(LocalDate.now())) " (تمام شده)" else "",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                     med.stock?.let { Text("موجودی: ${it.fa()} عدد", style = MaterialTheme.typography.bodyMedium) }
                     if (med.notes.isNotBlank()) Text(med.notes, style = MaterialTheme.typography.bodyMedium)
                     if (!med.active) Text("یادآوری متوقف شده", style = MaterialTheme.typography.labelMedium)

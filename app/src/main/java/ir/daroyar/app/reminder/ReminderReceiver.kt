@@ -24,8 +24,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 val atThisTime = meds.filter { it.active && minute in it.times }
                 atThisTime.filter { it.isDueOn(date) && !store.isTaken(it.id, date, minute) }
                     .forEach { Notifier.showDose(context, it, minute, date) }
-                if (atThisTime.isNotEmpty()) {
-                    val next = Schedule.following(date, minute, LocalDateTime.now(), Schedule.slotDays(meds, minute))
+                Schedule.followingSlot(meds, minute, date, LocalDateTime.now())?.let { next ->
                     ReminderScheduler.scheduleSlot(context, minute, next)
                 }
             }

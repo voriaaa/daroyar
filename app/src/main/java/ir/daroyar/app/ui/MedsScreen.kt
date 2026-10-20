@@ -37,6 +37,8 @@ import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatDays
 import ir.daroyar.app.util.formatMinute
+import ir.daroyar.app.util.formatRange
+import java.time.LocalDate
 
 @Composable
 fun MedsScreen(
@@ -175,6 +177,14 @@ private fun MedCard(med: Medication, onClick: () -> Unit, onToggleActive: (Boole
                     color = colors.primary,
                     fontWeight = FontWeight.Medium,
                 )
+                med.range?.let { range ->
+                    val ended = range.endedBefore(LocalDate.now())
+                    Text(
+                        formatRange(range) + if (ended) " (تمام شده)" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (ended) colors.onSurfaceVariant else colors.primary,
+                    )
+                }
                 val weeklyDrug = remember(med.name, med.days) {
                     DrugMatcher.match(med.name).firstOrNull { it.tooFrequent(med.days) }
                 }

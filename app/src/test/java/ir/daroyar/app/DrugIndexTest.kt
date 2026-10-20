@@ -56,6 +56,29 @@ class DrugIndexTest {
     }
 
     @Test
+    fun typingAProblemListsTheDrugsForIt() {
+        val inflammation = DrugMatcher.byUse("التهاب")
+        val ids = inflammation.map { it.id }
+        assertTrue(ids.containsAll(listOf("ibuprofen", "naproxen", "diclofenac", "prednisolone")))
+        assertFalse("acetaminophen" in ids) // a pain killer, but not anti-inflammatory
+        assertTrue(inflammation.any { it.isIndexed })
+        // Detailed entries come first.
+        assertFalse(inflammation.first().isIndexed)
+
+        val parasites = DrugMatcher.byUse("انگل").map { it.id }
+        assertTrue(parasites.containsAll(listOf("mebendazole", "albendazole", "metronidazole")))
+        assertTrue(DrugMatcher.byUse("ضد انگل").map { it.id }.containsAll(parasites.take(3)))
+
+        // Short words count only as whole topic words.
+        assertTrue("acetaminophen" in DrugMatcher.byUse("تب").map { it.id })
+        assertTrue(DrugMatcher.byUse("کلس").isEmpty())
+        // A drug's own name is not a topic.
+        assertTrue(DrugMatcher.byUse("متفورمین").isEmpty())
+        // Herbal brands' groups are only their maker, so they never come up for a problem.
+        assertTrue(DrugMatcher.byUse("درد").none { DrugIndex.BRAND_TAG in it.tags })
+    }
+
+    @Test
     fun indexedDrugsTakeNoPartInInteractionChecks() {
         val meds = listOf(
             Medication(id = 1, name = "انتاکاپون", times = listOf(9 * 60)),

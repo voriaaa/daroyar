@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.Spa
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ir.daroyar.app.data.DateRange
 import ir.daroyar.app.data.Kind
 import ir.daroyar.app.data.Medication
 import ir.daroyar.app.drugs.Drug
@@ -69,7 +71,10 @@ import ir.daroyar.app.drugs.InteractionChecker
 import ir.daroyar.app.drugs.isIndexed
 import ir.daroyar.app.reminder.Schedule
 import ir.daroyar.app.util.PERSIAN_WEEK
+import ir.daroyar.app.util.fa
 import ir.daroyar.app.util.formatMinute
+import ir.daroyar.app.util.formatRange
+import ir.daroyar.app.util.formatShortDate
 import ir.daroyar.app.util.latinDigits
 import ir.daroyar.app.util.persianName
 import java.time.DayOfWeek
@@ -91,6 +96,11 @@ fun EditMedScreen(
     var times by rememberSaveable { mutableStateOf(ArrayList(initial.times)) }
     var specificDays by rememberSaveable { mutableStateOf(!initial.everyDay) }
     var days by rememberSaveable { mutableStateOf(HashSet(initial.days)) }
+    var useRange by rememberSaveable { mutableStateOf(initial.range != null) }
+    var rangeStart by rememberSaveable { mutableStateOf(initial.range?.start?.toEpochDay()) }
+    var rangeEnd by rememberSaveable { mutableStateOf(initial.range?.end?.toEpochDay()) }
+    var rangeMonthly by rememberSaveable { mutableStateOf(initial.range?.monthly ?: false) }
+    var pickingRange by remember { mutableStateOf(false) }
     var trackStock by rememberSaveable { mutableStateOf(initial.stock != null) }
     var stockText by rememberSaveable { mutableStateOf(initial.stock?.toString().orEmpty()) }
     var perDoseText by rememberSaveable { mutableStateOf(initial.perDose.toString()) }
@@ -157,6 +167,10 @@ fun EditMedScreen(
     val suggestions = remember(name) { DrugMatcher.suggest(name) }
     val showSuggestions = nameFocused && !namePicked && suggestions.isNotEmpty() &&
         suggestions.none { it.fa == name.trim() }
+    // Typing a problem or drug group ("التهاب", "انگل") lists the drugs for it.
+    val related = remember(name) { DrugMatcher.byUse(name) - suggestions.toSet() }
+    var showAllRelated by remember(name) { mutableStateOf(false) }
+    val showRelated = nameFocused && !namePicked && related.isNotEmpty()
     val warnings = remember(name, times, otherMeds) {
         InteractionChecker.checkAgainst(initial.copy(name = name, times = times.toList()), otherMeds.filter { it.active })
             .filter { it.rank < 3 }
@@ -168,10 +182,18 @@ fun EditMedScreen(
         if (specificDays && days.isEmpty()) emptyList() else matched.filter { it.tooFrequent(scheduledDays) }
     }
 
+    val range = run {
+        val start = rangeStart
+        val end = rangeEnd
+        if (start == null || end == null || end < start) null
+        else DateRange(LocalDate.ofEpochDay(start), LocalDate.ofEpochDay(end), rangeMonthly)
+    }
+
     val stock = stockText.latinDigits().trim().toIntOrNull()
     val nameError = showErrors && name.isBlank()
     val timesError = showErrors && times.isEmpty()
     val daysError = showErrors && specificDays && days.isEmpty()
+    val rangeError = showErrors && useRange && range == null
     val stockError = showErrors && trackStock && stock == null
 
     Scaffold(
@@ -239,6 +261,16 @@ fun EditMedScreen(
             )
             if (showSuggestions) {
                 SuggestionList(suggestions, onPick = { pickDrug(it) })
+            }
+            if (showRelated) {
+                val shown = if (showAllRelated) related else related.take(RELATED_PREVIEW)
+                SuggestionList(
+                    drugs = shown,
+                    onPick = { pickDrug(it) },
+                    title = "داروها و مکمل‌های مرتبط با «${name.trim()}» (${related.size.fa()} مورد)",
+                    moreLabel = if (shown.size < related.size) "نمایش همه (${related.size.fa()})" else null,
+                    onMore = { showAllRelated = true },
+                )
             }
             if (kind == Kind.SUPPLEMENT && name.isBlank()) {
                 Text(
@@ -362,6 +394,44 @@ fun EditMedScreen(
                     color = if (daysError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("فقط در بازهٔ تاریخ خاص", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "مثلاً از ۲۱ این ماه تا ۲ ماه بعد؛ برای داروهایی که فقط چند روز یا در روزهای معینی از ماه (مثلاً قبل یا بعد از قاعدگی) مصرف می‌شوند.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = useRange,
+                    onCheckedChange = {
+                        useRange = it
+                        if (it && range == null) pickingRange = true
+                    },
+                )
+            }
+            if (useRange) {
+                OutlinedButton(onClick = { pickingRange = true }) {
+                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(range?.let { formatRange(it.copy(monthly = false)) } ?: "انتخاب تاریخ از تقویم")
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !rangeMonthly, onClick = { rangeMonthly = false }, label = { Text("فقط همین یک بار") })
+                    FilterChip(selected = rangeMonthly, onClick = { rangeMonthly = true }, label = { Text("هر ماه تکرار شود") })
+                }
+                Text(
+                    when {
+                        range == null -> "روز شروع و پایان را از تقویم انتخاب کنید."
+                        range.monthly -> "${formatRange(range)} یادآوری می‌شود، از ${formatShortDate(range.start)}."
+                        else -> "فقط ${formatRange(range)} یادآوری می‌شود و بعد از آن خودکار قطع می‌شود."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (rangeError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             tooFrequent.forEach { drug ->
                 WeeklyDrugWarning(
                     drug = drug,
@@ -426,7 +496,9 @@ fun EditMedScreen(
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick = {
-                    if (name.isBlank() || times.isEmpty() || (specificDays && days.isEmpty()) || (trackStock && stock == null)) {
+                    if (name.isBlank() || times.isEmpty() || (specificDays && days.isEmpty()) ||
+                        (useRange && range == null) || (trackStock && stock == null)
+                    ) {
                         showErrors = true
                     } else {
                         onSave(
@@ -436,6 +508,7 @@ fun EditMedScreen(
                                 notes = notes.trim(),
                                 times = times.distinct().sorted(),
                                 days = scheduledDays,
+                                range = if (useRange) range else null,
                                 kind = kind,
                                 stock = if (trackStock) stock?.coerceAtLeast(0) else null,
                                 perDose = perDoseText.latinDigits().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1,
@@ -450,6 +523,22 @@ fun EditMedScreen(
                 Text("ذخیره", style = MaterialTheme.typography.titleMedium)
             }
         }
+    }
+
+    if (pickingRange) {
+        DateRangePickerDialog(
+            initialStart = range?.start,
+            initialEnd = range?.end,
+            onDismiss = {
+                pickingRange = false
+                if (range == null) useRange = false
+            },
+            onConfirm = { start, end ->
+                rangeStart = start.toEpochDay()
+                rangeEnd = end.toEpochDay()
+                pickingRange = false
+            },
+        )
     }
 
     if (confirmDelete && onDelete != null) {
@@ -470,15 +559,35 @@ fun EditMedScreen(
     }
 }
 
-/** Drop-down style list under the name field; one row per drug with its Persian and English name and use. */
+private const val RELATED_PREVIEW = 10
+
+/**
+ * Drop-down style list under the name field; one row per drug with its Persian and English name and
+ * use, under an optional [title] and above an optional "show all" button ([moreLabel]).
+ */
 @Composable
-private fun SuggestionList(drugs: List<Drug>, onPick: (Drug) -> Unit) {
+private fun SuggestionList(
+    drugs: List<Drug>,
+    onPick: (Drug) -> Unit,
+    title: String? = null,
+    moreLabel: String? = null,
+    onMore: () -> Unit = {},
+) {
     val colors = MaterialTheme.colorScheme
     Card(
         colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerHigh),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
         Column {
+            if (title != null) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 4.dp),
+                )
+            }
             drugs.forEachIndexed { i, drug ->
                 if (i > 0) HorizontalDivider(color = colors.outlineVariant)
                 Row(
@@ -518,6 +627,10 @@ private fun SuggestionList(drugs: List<Drug>, onPick: (Drug) -> Unit) {
                         )
                     }
                 }
+            }
+            if (moreLabel != null) {
+                HorizontalDivider(color = colors.outlineVariant)
+                TextButton(onClick = onMore, modifier = Modifier.fillMaxWidth()) { Text(moreLabel) }
             }
         }
     }

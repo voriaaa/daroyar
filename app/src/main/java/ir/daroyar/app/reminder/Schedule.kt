@@ -11,7 +11,8 @@ enum class DoseStatus { TAKEN, LATE, UPCOMING }
 /**
  * Pure date/time rules for doses; kept free of Android types so they can be unit-tested.
  *
- * A set of weekdays limits a dose to those days; an empty set means every day.
+ * A set of weekdays limits a dose to those days; an empty set means every day. A medication's
+ * date range limits it further ([Medication.isDueOn]).
  */
 object Schedule {
 
@@ -23,18 +24,28 @@ object Schedule {
     fun normalizeDays(days: Collection<DayOfWeek>): Set<DayOfWeek> =
         days.toSet().let { if (it.size == 7) emptySet() else it }
 
-    /** [date] itself if [days] includes it, otherwise the next day that does. */
-    private fun firstDueOnOrAfter(date: LocalDate, days: Set<DayOfWeek>): LocalDate {
+    /** How far ahead to look for a due day; a date range may start months from now. */
+    private const val HORIZON_DAYS = 800
+
+    /** [date] itself if it is due, otherwise the next day that is; null if none is within [HORIZON_DAYS]. */
+    private fun firstDueOnOrAfter(date: LocalDate, isDue: (LocalDate) -> Boolean): LocalDate? {
         var d = date
-        while (!isDue(days, d)) d = d.plusDays(1) // at most six steps: days is empty or has a match
-        return d
+        repeat(HORIZON_DAYS) {
+            if (isDue(d)) return d
+            d = d.plusDays(1)
+        }
+        return null
     }
 
     /** First occurrence of [minuteOfDay] on one of [days] strictly after [now]. */
-    fun nextAfter(now: LocalDateTime, minuteOfDay: Int, days: Set<DayOfWeek> = emptySet()): LocalDateTime {
+    fun nextAfter(now: LocalDateTime, minuteOfDay: Int, days: Set<DayOfWeek> = emptySet()): LocalDateTime =
+        nextDue(now, minuteOfDay) { isDue(days, it) }!! // days is empty or has a match within a week
+
+    /** First occurrence of [minuteOfDay] on a day that [isDue] strictly after [now], or null if there is none. */
+    fun nextDue(now: LocalDateTime, minuteOfDay: Int, isDue: (LocalDate) -> Boolean): LocalDateTime? {
         val today = now.toLocalDate()
         val start = if (today.atTime(timeOf(minuteOfDay)).isAfter(now)) today else today.plusDays(1)
-        return firstDueOnOrAfter(start, days).atTime(timeOf(minuteOfDay))
+        return firstDueOnOrAfter(start, isDue)?.atTime(timeOf(minuteOfDay))
     }
 
     /**
@@ -46,19 +57,33 @@ object Schedule {
         minuteOfDay: Int,
         now: LocalDateTime,
         days: Set<DayOfWeek> = emptySet(),
-    ): LocalDateTime {
-        val candidate = firstDueOnOrAfter(firedDate.plusDays(1), days).atTime(timeOf(minuteOfDay))
-        return if (candidate.isAfter(now)) candidate else nextAfter(now, minuteOfDay, days)
+    ): LocalDateTime = followingDue(firedDate, minuteOfDay, now) { isDue(days, it) }!!
+
+    /** [following] for any rule of due days; null once no day is due any more. */
+    fun followingDue(
+        firedDate: LocalDate,
+        minuteOfDay: Int,
+        now: LocalDateTime,
+        isDue: (LocalDate) -> Boolean,
+    ): LocalDateTime? {
+        val candidate = firstDueOnOrAfter(firedDate.plusDays(1), isDue)?.atTime(timeOf(minuteOfDay))
+        return if (candidate == null || candidate.isAfter(now)) candidate else nextDue(now, minuteOfDay, isDue)
     }
 
     /**
-     * Weekdays on which the alarm slot at [minuteOfDay] has to ring: the union of the days of the
-     * active medications using that time, or every day (empty) if any of them is daily.
+     * Whether the alarm slot at [minuteOfDay] has to ring on [date]: some active medication uses that
+     * time and is due that day (by its weekdays and date range).
      */
-    fun slotDays(meds: List<Medication>, minuteOfDay: Int): Set<DayOfWeek> {
-        val using = meds.filter { it.active && minuteOfDay in it.times }
-        return if (using.any { it.everyDay }) emptySet() else normalizeDays(using.flatMap { it.days })
-    }
+    fun slotDueOn(meds: List<Medication>, minuteOfDay: Int, date: LocalDate): Boolean =
+        meds.any { it.active && minuteOfDay in it.times && it.isDueOn(date) }
+
+    /** Next time the slot at [minuteOfDay] rings after [now]; null when no medication needs it again. */
+    fun nextSlot(meds: List<Medication>, minuteOfDay: Int, now: LocalDateTime): LocalDateTime? =
+        nextDue(now, minuteOfDay) { slotDueOn(meds, minuteOfDay, it) }
+
+    /** The slot's ring after the one on [firedDate]; see [following]. */
+    fun followingSlot(meds: List<Medication>, minuteOfDay: Int, firedDate: LocalDate, now: LocalDateTime): LocalDateTime? =
+        followingDue(firedDate, minuteOfDay, now) { slotDueOn(meds, minuteOfDay, it) }
 
     fun status(minuteOfDay: Int, now: LocalTime, taken: Boolean): DoseStatus = when {
         taken -> DoseStatus.TAKEN
