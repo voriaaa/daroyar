@@ -28,6 +28,8 @@ import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -95,8 +97,16 @@ fun EditMedScreen(
     var kindTouched by rememberSaveable { mutableStateOf(false) }
     val noun = kind.noun
 
-    fun setTimes(list: List<Int>) {
+    // A new entry gets the drug's best times automatically until the user changes the times themselves.
+    var timesTouched by rememberSaveable { mutableStateOf(initial.id != 0L) }
+    var autoTimesFor by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun setTimes(list: List<Int>, byUser: Boolean = true) {
         times = ArrayList(list.distinct().sorted())
+        if (byUser) {
+            timesTouched = true
+            autoTimesFor = null
+        }
     }
 
     fun setDays(set: Set<DayOfWeek>) {
@@ -119,12 +129,22 @@ fun EditMedScreen(
         if (initial.id == 0L && !kindTouched && matched.isNotEmpty()) {
             kind = if (matched.all { it.isSupplement }) Kind.SUPPLEMENT else Kind.MEDICINE
         }
+        if (!timesTouched) {
+            val withTimes = matched.firstOrNull { it.suggestedTimes != null }
+            if (withTimes != null) {
+                setTimes(withTimes.suggestedTimes.orEmpty(), byUser = false)
+                autoTimesFor = withTimes.fa
+                if (withTimes.weekly && !specificDays) makeWeekly()
+            } else if (autoTimesFor != null) {
+                // The name changed to something without a best time: don't keep the previous drug's times.
+                setTimes(emptyList(), byUser = false)
+                autoTimesFor = null
+            }
+        }
     }
 
-    /** Picks a name from the reference and, for a new schedule, starts from its best times. */
     fun pickDrug(drug: Drug) {
         name = drug.fa
-        if (times.isEmpty()) drug.suggestedTimes?.let { setTimes(it) }
     }
     val suggestions = remember(name) { if (matched.isEmpty()) DrugMatcher.suggest(name) else emptyList() }
     val warnings = remember(name, times, otherMeds) {
@@ -211,7 +231,7 @@ fun EditMedScreen(
             }
             if (kind == Kind.SUPPLEMENT && name.isBlank()) {
                 Text(
-                    "مکمل‌های رایج (ساعت مناسب مصرف خودکار پیشنهاد می‌شود):",
+                    "مکمل‌های رایج (بهترین ساعت مصرف خودکار تنظیم می‌شود):",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -277,11 +297,26 @@ fun EditMedScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("افزودن ساعت")
             }
-            Text(
-                if (timesError) "دست‌کم یک ساعت مصرف انتخاب کنید" else "برای تغییر هر ساعت روی آن بزنید.",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (timesError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val autoFor = autoTimesFor
+            val asNeeded = matched.firstOrNull()?.takeIf { matched.all { d -> d.suggestedTimes == null } }
+            when {
+                timesError -> Text(
+                    "دست‌کم یک ساعت مصرف انتخاب کنید",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                autoFor != null -> AutoTimesNote(
+                    "⏰ دارویار بهترین ساعت مصرف «$autoFor» را تنظیم کرد. اگر این ساعت برایتان مناسب نیست، روی آن بزنید و عوضش کنید، یا ساعت دیگری اضافه کنید.",
+                )
+                asNeeded != null && times.isEmpty() -> AutoTimesNote(
+                    "«${asNeeded.fa}» معمولاً در صورت نیاز یا طبق نسخه مصرف می‌شود و ساعت ثابتی ندارد؛ اگر پزشک نوبت ثابت گفته، ساعت‌ها را خودتان اضافه کنید.",
+                )
+                else -> Text(
+                    "برای تغییر هر ساعت روی آن بزنید.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             SectionTitle("روزهای مصرف")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -417,6 +452,18 @@ fun EditMedScreen(
                 TextButton(onClick = { confirmDelete = false }) { Text("انصراف") }
             },
         )
+    }
+}
+
+@Composable
+private fun AutoTimesNote(text: String) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
     }
 }
 

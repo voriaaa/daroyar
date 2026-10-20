@@ -103,6 +103,24 @@ class InteractionTest {
     }
 
     @Test
+    fun newSeriousPairs() {
+        assertEquals(Severity.HIGH, check(med("نالترکسون"), med("ترامادول")).first().severity)
+        assertEquals(Severity.HIGH, check(med("سووداک"), med("آمیودارون")).first().severity)
+        assertEquals(Severity.HIGH, check(med("آزاتیوپرین"), med("آلوپورینول")).first().severity)
+        assertEquals(Severity.HIGH, check(med("تاموکسیفن"), med("فلوکستین")).first().severity)
+        assertEquals(Severity.HIGH, check(med("رپاگلیناید"), med("جم‌فیبروزیل")).first().severity)
+        // Fenofibrate with a statin is a caution, unlike gemfibrozil.
+        assertTrue(check(med("فنوفیبرات"), med("آتورواستاتین")).none { it.severity == Severity.HIGH })
+    }
+
+    @Test
+    fun spacingRulesCoverTheNewDrugs() {
+        assertFalse(check(med("افلوکساسین", 9 * 60), med("کلسیم", 10 * 60)).single().spacingOk)
+        assertTrue(check(med("ریزدرونات", 7 * 60), med("کلسیم", 13 * 60)).single().spacingOk)
+        assertFalse(check(med("تتراسایکلین", 12 * 60), med("آهن", 11 * 60)).single().spacingOk)
+    }
+
+    @Test
     fun spacingAcrossMidnight() {
         assertTrue(InteractionChecker.spacingOk(listOf(22 * 60), listOf(7 * 60), 240, 240))
         assertFalse(InteractionChecker.spacingOk(listOf(23 * 60), listOf(60), 240, 240))

@@ -71,6 +71,24 @@ class DrugMatcherTest {
     }
 
     @Test
+    fun similarNamesInTheLargerDatabaseStayApart() {
+        assertEquals(listOf("metoclopramide"), ids("متوکلوپرامید"))
+        assertEquals(listOf("loperamide"), ids("لوپرامید"))
+        assertEquals(listOf("desloratadine"), ids("دسلوراتادین"))
+        assertEquals(listOf("levocetirizine"), ids("لووستیریزین"))
+        assertEquals(listOf("valacyclovir"), ids("والاسیکلوویر"))
+        assertEquals(listOf("methylprednisolone"), ids("متیل پردنیزولون ۴"))
+        assertEquals(listOf("ciprofloxacin"), ids("Ciprofloxacin 500"))
+        assertEquals(listOf("ofloxacin"), ids("افلوکساسین"))
+        assertEquals(listOf("thiamine"), ids("ویتامین ب۱"))
+        assertEquals(listOf("fluticasone_salmeterol"), ids("فلوتیکازون سالمترول"))
+        assertEquals(listOf("terazosin"), ids("ترازوسین"))
+        assertEquals(listOf("trazodone"), ids("ترازودون"))
+        assertEquals(listOf("sitagliptin", "metformin"), ids("جانومت"))
+        assertEquals(listOf("orphenadrine", "acetaminophen"), ids("نورژزیک"))
+    }
+
+    @Test
     fun suggestsWhileTyping() {
         assertTrue(DrugMatcher.suggest("متف").any { it.id == "metformin" })
         assertTrue(DrugMatcher.suggest("آموکسی").map { it.id }.containsAll(listOf("amoxicillin", "co_amoxiclav")))

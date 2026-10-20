@@ -268,6 +268,76 @@ val interactionRules: List<Rule> = listOf(
         "خطر بالا رفتن فشار داخل جمجمه (سردرد شدید، تاری دید). با هم مصرف نشوند.",
     ),
 
+    // ---- More specific pairs ----
+    rule(
+        "ergot", "cyp3a4_strong", HIGH,
+        "سطح ارگوتامین به حد خطرناک می‌رسد و ممکن است خون‌رسانی دست و پا یا مغز قطع شود. با هم مصرف نشوند.",
+    ),
+    rule(
+        "ergot", "triptan", HIGH,
+        "هر دو رگ‌ها را جمع می‌کنند؛ تا ۲۴ ساعت از هم فاصله داشته باشند.",
+    ),
+    rule(
+        "fenofibrate", "statin", MODERATE,
+        "خطر درد و آسیب عضلانی کمی بیشتر می‌شود؛ درد یا ضعف عضلانی را گزارش کنید.",
+    ),
+    rule(
+        "repaglinide", "fibrate", HIGH,
+        "جم‌فیبروزیل سطح رپاگلیناید را چند برابر می‌کند و افت شدید قند می‌دهد. این ترکیب ممنوع است.",
+    ),
+    rule(
+        "ticagrelor", "cyp3a4_strong", HIGH,
+        "سطح تیکاگرلور بالا می‌رود و خطر خونریزی زیاد می‌شود. با هم مصرف نشوند.",
+    ),
+    rule(
+        "rate_ccb", "beta_blocker", MODERATE,
+        "هر دو ضربان قلب را کند می‌کنند؛ ممکن است ضربان یا فشار بیش از حد پایین بیاید.",
+    ),
+    rule(
+        "rate_ccb", "digoxin", MODERATE,
+        "سطح دیگوکسین بالا می‌رود و ضربان کندتر می‌شود؛ به علائم مسمومیت توجه کنید.",
+    ),
+    rule(
+        "ace_inhibitor", "neprilysin", HIGH,
+        "با هم خطر ورم شدید صورت و گلو (آنژیوادم) دارند؛ بین قطع یکی و شروع دیگری دست‌کم ۳۶ ساعت فاصله لازم است.",
+    ),
+    rule(
+        "sofosbuvir", "amiodarone", HIGH,
+        "خطر کندی شدید و خطرناک ضربان قلب. این ترکیب معمولاً ممنوع است.",
+    ),
+    rule(
+        "opioid_antagonist", "opioid", HIGH,
+        "نالترکسون اثر مسکن‌ها و داروهای اپیوئیدی را از بین می‌برد و در مصرف‌کنندهٔ اپیوئید علائم ترک شدید ایجاد می‌کند.",
+    ),
+    rule(
+        "disulfiram", "nitroimidazole metronidazole", HIGH,
+        "مصرف هم‌زمان ممکن است گیجی و روان‌پریشی ایجاد کند. با هم مصرف نشوند.",
+    ),
+    rule(
+        "clozapine", "cyp1a2_strong", HIGH,
+        "سطح کلوزاپین چند برابر می‌شود (خواب‌آلودگی شدید، تشنج، افت فشار).",
+    ),
+    rule(
+        "tamoxifen", "cyp2d6_strong", HIGH,
+        "این دارو اثر تاموکسیفن را در پیشگیری از عود سرطان کم می‌کند؛ ضدافسردگی دیگری (مثل ونلافاکسین) بهتر است.",
+    ),
+    rule(
+        "azathioprine", "allopurinol xanthine_oxidase", HIGH,
+        "سطح آزاتیوپرین به حد سمی می‌رسد (کاهش شدید سلول‌های خونی). دوز باید بسیار کم شود یا این ترکیب مصرف نشود.",
+    ),
+    rule(
+        "reduces_contraceptive", "oral_contraceptive", HIGH,
+        "اثر قرص ضدبارداری کم می‌شود و ممکن است بارداری رخ دهد. یک روش پیشگیری دیگر هم لازم است.",
+    ),
+    rule(
+        "antifibrinolytic", "oral_contraceptive", MODERATE,
+        "هر دو خطر لخته را بالا می‌برند؛ پزشک باید از مصرف هم‌زمان خبر داشته باشد.",
+    ),
+    rule(
+        "seizure_risk", "tramadol", MODERATE,
+        "هر دو آستانهٔ تشنج را پایین می‌آورند؛ خطر تشنج بیشتر می‌شود.",
+    ),
+
     // ---- Supplements ----
     rule(
         "warfarin", "vitamin_k", MODERATE,
@@ -278,8 +348,8 @@ val interactionRules: List<Rule> = listOf(
         "این مکمل ممکن است اثر وارفارین را کم کند؛ INR را زودتر چک کنید.",
     ),
     rule(
-        "warfarin", "glucosamine", MODERATE,
-        "گلوکزامین ممکن است INR را بالا ببرد و خطر خونریزی را بیشتر کند.",
+        "warfarin", "glucosamine cranberry", MODERATE,
+        "این مکمل ممکن است INR را بالا ببرد و خطر خونریزی را بیشتر کند.",
     ),
     rule(
         "anticoagulant antiplatelet", "bleeding_supplement", MODERATE,
@@ -300,16 +370,16 @@ val interactionRules: List<Rule> = listOf(
         text = "این مواد جذب سیپروفلوکساسین را به‌شدت کم می‌کنند. سیپروفلوکساسین را دست‌کم ۲ ساعت قبل یا ۶ ساعت بعد از آن‌ها بخورید.",
     ),
     spacing(
-        "levofloxacin", "polyvalent_cation", before = 120, after = 120,
-        text = "این مواد جذب لووفلوکساسین را کم می‌کنند؛ دست‌کم ۲ ساعت فاصله بدهید.",
+        "levofloxacin ofloxacin", "polyvalent_cation", before = 120, after = 120,
+        text = "این مواد جذب این آنتی‌بیوتیک را کم می‌کنند؛ دست‌کم ۲ ساعت فاصله بدهید.",
     ),
     spacing(
-        "doxycycline", "polyvalent_cation", before = 120, after = 180,
-        text = "این مواد جذب داکسی‌سایکلین را کم می‌کنند. داکسی‌سایکلین را ۲ ساعت قبل یا ۳ ساعت بعد از آن‌ها بخورید.",
+        "tetracycline", "polyvalent_cation", before = 120, after = 180,
+        text = "این مواد جذب آنتی‌بیوتیک‌های تتراسایکلین را کم می‌کنند. آنتی‌بیوتیک را ۲ ساعت قبل یا ۳ ساعت بعد از آن‌ها بخورید.",
     ),
     spacing(
-        "alendronate", "polyvalent_cation", before = 30, after = 120,
-        text = "آلندرونات را صبح ناشتا بخورید و کلسیم، آهن یا آنتی‌اسید را دست‌کم ۳۰ دقیقه بعد (بهتر است با ناهار یا شام).",
+        "bisphosphonate", "polyvalent_cation", before = 30, after = 120,
+        text = "داروی پوکی استخوان را صبح ناشتا بخورید و کلسیم، آهن یا آنتی‌اسید را دست‌کم ۳۰ دقیقه بعد (بهتر است با ناهار یا شام).",
     ),
     spacing(
         "iron", "calcium antacid", before = 120, after = 120,

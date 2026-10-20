@@ -10,7 +10,8 @@ object DrugDatabase {
 
     val drugs: List<Drug> by lazy {
         painDrugs() + heartDrugs() + diabetesAndHormoneDrugs() + stomachDrugs() +
-            antibiotics() + mindAndNerveDrugs() + allergyAndLungDrugs() + supplements() + vitaminsAndHerbals() + otherDrugs()
+            antibiotics() + mindAndNerveDrugs() + allergyAndLungDrugs() + supplements() + vitaminsAndHerbals() + otherDrugs() +
+            moreDrugs()
     }
 
     val byId: Map<String, Drug> by lazy { drugs.associateBy { it.id } }
@@ -26,12 +27,22 @@ object DrugDatabase {
         "نوافن" to listOf("acetaminophen", "ibuprofen"),
         "novafen" to listOf("acetaminophen", "ibuprofen"),
         "سینمت" to listOf("levodopa"),
+        "نورژزیک" to listOf("orphenadrine", "acetaminophen"),
+        "norgesic" to listOf("orphenadrine", "acetaminophen"),
+        "ادالت کلد" to listOf("acetaminophen", "pseudoephedrine", "chlorpheniramine"),
+        "اکسفورج" to listOf("amlodipine", "valsartan"),
+        "exforge" to listOf("amlodipine", "valsartan"),
+        "والسارتان اچ" to listOf("valsartan", "hydrochlorothiazide"),
+        "جانومت" to listOf("sitagliptin", "metformin"),
+        "janumet" to listOf("sitagliptin", "metformin"),
+        "گالووس مت" to listOf("vildagliptin", "metformin"),
+        "galvusmet" to listOf("vildagliptin", "metformin"),
     )
 }
 
-private fun t(h: Int, m: Int = 0) = h * 60 + m
+internal fun t(h: Int, m: Int = 0) = h * 60 + m
 
-private fun d(
+internal fun d(
     id: String,
     fa: String,
     en: String,
@@ -46,12 +57,12 @@ private fun d(
     weekly: Boolean = false,
 ) = Drug(id, fa, en, aliases, tags, use, about, timing, tip, times, caution, weekly)
 
-private const val WITH_FOOD = "همراه غذا"
-private const val NSAID_CAUTION =
+internal const val WITH_FOOD = "همراه غذا"
+internal const val NSAID_CAUTION =
     "مصرف طولانی خطر زخم معده، بالا رفتن فشار خون و آسیب کلیه دارد. در زخم معده، بیماری کلیه یا سه‌ماههٔ سوم بارداری بدون نظر پزشک مصرف نشود."
-private const val ANTIBIOTIC_COURSE = "دوره را کامل کنید، حتی اگر زودتر حالتان بهتر شد."
-private const val DONT_STOP = "ناگهان قطع نشود؛ قطع یا تغییر دوز فقط با نظر پزشک."
-private const val BENZO_CAUTION =
+internal const val ANTIBIOTIC_COURSE = "دوره را کامل کنید، حتی اگر زودتر حالتان بهتر شد."
+internal const val DONT_STOP = "ناگهان قطع نشود؛ قطع یا تغییر دوز فقط با نظر پزشک."
+internal const val BENZO_CAUTION =
     "خواب‌آلودگی و وابستگی؛ الکل ممنوع، رانندگی نکنید و پس از مصرف طولانی ناگهان قطع نشود."
 
 private fun painDrugs() = listOf(
@@ -70,6 +81,7 @@ private fun painDrugs() = listOf(
         use = "درد (سردرد، دندان، عضلانی، قاعدگی)، التهاب و تب",
         about = "ضدالتهاب غیراستروئیدی (NSAID)؛ درد و التهاب را کم می‌کند ولی می‌تواند معده را تحریک کند.",
         timing = "همراه غذا یا یک لیوان شیر، برای محافظت از معده.",
+        times = listOf(t(8), t(14), t(20)),
         tip = WITH_FOOD, caution = NSAID_CAUTION,
     ),
     d(
@@ -78,6 +90,7 @@ private fun painDrugs() = listOf(
         use = "درد مفاصل و آرتروز، درد قاعدگی و التهاب",
         about = "ضدالتهاب غیراستروئیدی با اثر طولانی‌تر از بروفن (معمولاً روزی دو بار).",
         timing = "همراه غذا یا شیر.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD, caution = NSAID_CAUTION,
     ),
     d(
@@ -87,6 +100,7 @@ private fun painDrugs() = listOf(
         use = "درد و التهاب مفاصل، کمردرد و درد پس از ضربه",
         about = "ضدالتهاب غیراستروئیدی قوی.",
         timing = "همراه غذا.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD, caution = "در بیماری قلبی-عروقی با احتیاط. $NSAID_CAUTION",
     ),
     d(
@@ -96,6 +110,7 @@ private fun painDrugs() = listOf(
         use = "درد و التهاب آرتروز و روماتیسم",
         about = "ضدالتهابی که نسبت به بروفن آسیب کمتری به معده می‌زند.",
         timing = "با یا بدون غذا؛ اگر معده حساس است همراه غذا.",
+        times = listOf(t(8), t(20)),
         caution = "در بیماری قلبی یا حساسیت به سولفونامیدها با احتیاط.",
     ),
     d(
@@ -105,6 +120,7 @@ private fun painDrugs() = listOf(
         use = "درد قاعدگی و دردهای خفیف تا متوسط",
         about = "ضدالتهاب غیراستروئیدی که بیشتر برای درد قاعدگی به‌کار می‌رود؛ معمولاً حداکثر ۷ روز.",
         timing = "همراه غذا.",
+        times = listOf(t(8), t(14), t(20)),
         tip = WITH_FOOD, caution = NSAID_CAUTION,
     ),
     d(
@@ -114,6 +130,7 @@ private fun painDrugs() = listOf(
         use = "دوز کم (۸۰ میلی‌گرم): پیشگیری از سکتهٔ قلبی و مغزی؛ دوز بالا: درد و تب",
         about = "رقیق‌کنندهٔ خون (ضدپلاکت) و مسکن.",
         timing = "همراه غذا، هر روز در ساعت ثابت.",
+        times = listOf(t(8)),
         tip = WITH_FOOD,
         caution = "به کودکان و نوجوانان زیر ۱۶ سال در بیماری ویروسی داده نشود. پیش از جراحی یا کشیدن دندان به پزشک بگویید.",
     ),
@@ -140,6 +157,7 @@ private fun painDrugs() = listOf(
         use = "درد عصبی (مثل سوزش پای دیابتی و زونا) و تشنج",
         about = "داروی ضدتشنج که برای دردهای عصبی هم به‌کار می‌رود.",
         timing = "با یا بدون غذا؛ معمولاً دوز اول را شب شروع می‌کنند. اگر شربت معده (آنتی‌اسید) می‌خورید، دست‌کم ۲ ساعت فاصله بدهید.",
+        times = listOf(t(8), t(14), t(22)),
         caution = "سرگیجه و خواب‌آلودگی. $DONT_STOP",
     ),
     d(
@@ -149,6 +167,7 @@ private fun painDrugs() = listOf(
         use = "درد عصبی، فیبرومیالژیا، اضطراب و تشنج",
         about = "مشابه گاباپنتین، برای دردهای عصبی.",
         timing = "با یا بدون غذا، در ساعت‌های ثابت.",
+        times = listOf(t(8), t(20)),
         caution = "سرگیجه، خواب‌آلودگی و ورم پا. $DONT_STOP",
     ),
 )
@@ -161,6 +180,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا و محافظت از کلیه در دیابت",
         about = "گشادکنندهٔ عروق از گروه ARB.",
         timing = "روزی یک بار در ساعت ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "در بارداری ممنوع است. هنگام بلند شدن ممکن است سرگیجه بگیرید.",
     ),
     d(
@@ -170,6 +190,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا و نارسایی قلب",
         about = "گشادکنندهٔ عروق از گروه ARB.",
         timing = "در ساعت‌های ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "در بارداری ممنوع است.",
     ),
     d(
@@ -178,6 +199,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا و نارسایی قلب",
         about = "از گروه مهارکننده‌های ACE.",
         timing = "یک ساعت قبل از غذا؛ غذا جذب آن را کم می‌کند.",
+        times = listOf(t(7), t(19)),
         tip = "۱ ساعت قبل از غذا",
         caution = "سرفهٔ خشک عارضهٔ شایعی است. در بارداری ممنوع. ورم ناگهانی لب و صورت اورژانسی است.",
     ),
@@ -187,6 +209,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا و نارسایی قلب",
         about = "از گروه مهارکننده‌های ACE.",
         timing = "در ساعت‌های ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "سرفهٔ خشک شایع است. در بارداری ممنوع. ورم ناگهانی لب و صورت اورژانسی است.",
     ),
     d(
@@ -196,6 +219,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا و درد قفسهٔ سینه (آنژین)",
         about = "گشادکنندهٔ عروق از گروه مسدودکننده‌های کانال کلسیم.",
         timing = "روزی یک بار در ساعت ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "ورم مچ پا شایع است.",
     ),
     d(
@@ -204,6 +228,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا، تپش قلب و آنژین",
         about = "بتابلاکر؛ ضربان قلب و فشار را پایین می‌آورد.",
         timing = "روزی یک بار در ساعت ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "$DONT_STOP قطع ناگهانی ممکن است تپش و درد قلب بدهد.",
     ),
     d(
@@ -213,6 +238,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون بالا، آنژین، تپش قلب و نارسایی قلب",
         about = "بتابلاکر؛ ضربان قلب و فشار را پایین می‌آورد.",
         timing = "همراه غذا یا بلافاصله بعد از آن، هر روز به یک شکل.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD, caution = DONT_STOP,
     ),
     d(
@@ -222,6 +248,7 @@ private fun heartDrugs() = listOf(
         use = "فشار خون، تپش قلب، لرزش دست، پیشگیری از میگرن و علائم جسمی اضطراب",
         about = "بتابلاکر غیرانتخابی.",
         timing = "در ساعت‌های ثابت؛ همیشه به یک شکل (یا همیشه با غذا یا همیشه بدون غذا).",
+        times = listOf(t(8), t(20)),
         caution = "در آسم با احتیاط (ممکن است تنگی نفس بدهد). $DONT_STOP",
     ),
     d(
@@ -230,6 +257,7 @@ private fun heartDrugs() = listOf(
         use = "نارسایی قلب و فشار خون بالا",
         about = "بتابلاکر که رگ‌ها را هم گشاد می‌کند.",
         timing = "همراه غذا (سرگیجه را کم می‌کند).",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD, caution = DONT_STOP,
     ),
     d(
@@ -289,6 +317,7 @@ private fun heartDrugs() = listOf(
         use = "پیشگیری از لخته و سکته در فیبریلاسیون دهلیزی و درمان ترومبوز",
         about = "رقیق‌کنندهٔ خون جدید که آزمایش INR لازم ندارد.",
         timing = "دوزهای ۱۵ و ۲۰ میلی‌گرم حتماً همراه غذا (معمولاً شام).",
+        times = listOf(t(20)),
         tip = WITH_FOOD,
         caution = "نوبتی را جا نیندازید؛ پیش از جراحی یا کشیدن دندان به پزشک بگویید.",
     ),
@@ -309,6 +338,7 @@ private fun heartDrugs() = listOf(
         use = "پیشگیری از لخته بعد از سکتهٔ قلبی یا مغزی و بعد از گذاشتن استنت",
         about = "ضدپلاکت؛ از چسبیدن پلاکت‌ها به هم جلوگیری می‌کند.",
         timing = "روزی یک بار در ساعت ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "بعد از استنت هرگز خودسرانه قطع نشود. پیش از جراحی به پزشک بگویید.",
     ),
     d(
@@ -318,6 +348,7 @@ private fun heartDrugs() = listOf(
         use = "کاهش کلسترول و پیشگیری از بیماری قلبی و سکته",
         about = "استاتین؛ ساخت کلسترول در کبد را کم می‌کند.",
         timing = "هر ساعتی از روز، ولی هر روز در همان ساعت؛ با یا بدون غذا.",
+        times = listOf(t(21)),
         caution = "درد یا ضعف عضلانی بی‌دلیل را به پزشک بگویید. آب گریپ‌فروت زیاد ننوشید.",
     ),
     d(
@@ -327,6 +358,7 @@ private fun heartDrugs() = listOf(
         use = "کاهش کلسترول و پیشگیری از بیماری قلبی و سکته",
         about = "استاتین قوی؛ ساخت کلسترول در کبد را کم می‌کند.",
         timing = "هر ساعتی از روز، ولی هر روز در همان ساعت؛ آنتی‌اسید را دست‌کم ۲ ساعت بعد از آن بخورید.",
+        times = listOf(t(21)),
         caution = "درد یا ضعف عضلانی بی‌دلیل را به پزشک بگویید.",
     ),
     d(
@@ -365,6 +397,7 @@ private fun heartDrugs() = listOf(
         use = "پیشگیری و درمان درد قفسهٔ سینه (آنژین)",
         about = "نیترات؛ رگ‌های قلب را گشاد می‌کند.",
         timing = "طبق نسخه. در شکل‌های طولانی‌اثر یک فاصلهٔ بدون دارو (معمولاً شب) لازم است تا اثر دارو کم نشود.",
+        times = listOf(t(8)),
         caution = "سردرد شایع است. هرگز همراه سیلدنافیل یا تادالافیل مصرف نشود.",
     ),
     d(
@@ -374,6 +407,7 @@ private fun heartDrugs() = listOf(
         use = "نارسایی قلب و کنترل ضربان در فیبریلاسیون دهلیزی",
         about = "قدرت انقباض قلب را زیاد و ضربان را کند می‌کند؛ فاصلهٔ دوز مؤثر و سمی آن کم است.",
         timing = "روزی یک بار در ساعت ثابت.",
+        times = listOf(t(9)),
         caution = "تهوع، تاری دید یا دیدن هالهٔ زرد و سبز می‌تواند نشانهٔ مسمومیت باشد.",
     ),
     d(
@@ -383,6 +417,7 @@ private fun heartDrugs() = listOf(
         use = "آریتمی‌های قلبی",
         about = "ضدآریتمی قوی با تداخل‌های دارویی زیاد.",
         timing = "همراه غذا، هر روز به یک شکل.",
+        times = listOf(t(13)),
         tip = WITH_FOOD,
         caution = "پوست را از آفتاب محافظت کنید؛ آزمایش‌های منظم تیروئید، کبد و ریه لازم است.",
     ),
@@ -426,6 +461,7 @@ private fun diabetesAndHormoneDrugs() = listOf(
         use = "دیابت نوع ۲",
         about = "به تنظیم انسولین بعد از غذا کمک می‌کند و به‌تنهایی کمتر افت قند می‌دهد.",
         timing = "روزی یک بار، با یا بدون غذا.",
+        times = listOf(t(8)),
         caution = "درد شدید و مداوم شکم را گزارش کنید.",
     ),
     d(
@@ -463,6 +499,7 @@ private fun diabetesAndHormoneDrugs() = listOf(
         use = "پرکاری تیروئید",
         about = "ساخت هورمون تیروئید را کم می‌کند.",
         timing = "در ساعت ثابت، هر روز به یک شکل (با غذا یا بدون غذا).",
+        times = listOf(t(8)),
         caution = "تب، گلودرد یا زخم دهان را فوراً به پزشک بگویید (احتمال کاهش گلبول سفید).",
     ),
     d(
@@ -570,6 +607,7 @@ private fun stomachDrugs() = listOf(
         use = "سوزش سر دل و ترش کردن",
         about = "اسید معده را خنثی می‌کند؛ اثرش سریع ولی کوتاه است.",
         timing = "یک تا سه ساعت بعد از غذا و قبل از خواب. با بیشتر داروها دست‌کم ۲ ساعت فاصله داشته باشد.",
+        times = listOf(t(15), t(22)),
         tip = "۱ ساعت بعد از غذا",
         caution = "اگر بیش از دو هفته لازم شد، به پزشک مراجعه کنید.",
     ),
@@ -608,6 +646,7 @@ private fun stomachDrugs() = listOf(
         use = "دل‌درد و نفخ سندرم رودهٔ تحریک‌پذیر",
         about = "عضلات روده را شل می‌کند و دل‌پیچه را کم می‌کند.",
         timing = "۲۰ دقیقه قبل از غذا.",
+        times = listOf(t(7, 40), t(12, 40), t(19, 40)),
         tip = "۲۰ دقیقه قبل از غذا",
     ),
     d(
@@ -626,6 +665,7 @@ private fun stomachDrugs() = listOf(
         use = "سندرم رودهٔ تحریک‌پذیر و دل‌درد عصبی",
         about = "ترکیب یک ضداسپاسم و یک آرام‌بخش (کلردیازپوکساید).",
         timing = "۳۰ تا ۶۰ دقیقه قبل از غذا و قبل از خواب.",
+        times = listOf(t(7, 30), t(12, 30), t(22)),
         tip = "۳۰ تا ۶۰ دقیقه قبل از غذا",
         caution = "ممکن است وابستگی ایجاد کند؛ خواب‌آور است. در گلوکوم و بزرگی پروستات با احتیاط.",
     ),
@@ -649,6 +689,7 @@ private fun antibiotics() = listOf(
         use = "عفونت‌های سینوس، گوش، ریه، پوست، ادراری و گاز گرفتگی",
         about = "آموکسی‌سیلین همراه کلاوولانیک اسید، برای میکروب‌های مقاوم‌تر.",
         timing = "در شروع غذا (اسهال و دل‌درد کمتر)، هر ۸ یا ۱۲ ساعت.",
+        times = listOf(t(8), t(20)),
         tip = "در شروع غذا",
         caution = "$ANTIBIOTIC_COURSE در حساسیت به پنی‌سیلین ممنوع است.",
     ),
@@ -659,6 +700,7 @@ private fun antibiotics() = listOf(
         use = "عفونت‌های تنفسی، گلو، گوش، پوست و برخی عفونت‌های مقاربتی",
         about = "آنتی‌بیوتیک ماکرولید؛ معمولاً دورهٔ کوتاه ۳ تا ۵ روزه.",
         timing = "روزی یک بار در ساعت ثابت؛ کپسول یک ساعت قبل یا دو ساعت بعد از غذا، قرص با یا بدون غذا. با آنتی‌اسید ۲ ساعت فاصله.",
+        times = listOf(t(9)),
         caution = ANTIBIOTIC_COURSE,
     ),
     d(
@@ -678,6 +720,7 @@ private fun antibiotics() = listOf(
         use = "عفونت ادراری، گلو، گوش و برونشیت",
         about = "آنتی‌بیوتیک سفالوسپورین خوراکی.",
         timing = "روزی یک یا دو بار با فاصلهٔ مساوی، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "$ANTIBIOTIC_COURSE در حساسیت شدید به پنی‌سیلین با احتیاط.",
     ),
     d(
@@ -687,6 +730,7 @@ private fun antibiotics() = listOf(
         use = "عفونت پوست، گلو، ادراری و استخوان",
         about = "آنتی‌بیوتیک سفالوسپورین.",
         timing = "هر ۶ یا ۱۲ ساعت با فاصلهٔ مساوی، با یا بدون غذا.",
+        times = listOf(t(0), t(6), t(12), t(18)),
         caution = ANTIBIOTIC_COURSE,
     ),
     d(
@@ -706,6 +750,7 @@ private fun antibiotics() = listOf(
         use = "عفونت ریه، سینوس، ادراری و پوست",
         about = "آنتی‌بیوتیک فلوروکینولون.",
         timing = "روزی یک بار در ساعت ثابت؛ ۲ ساعت قبل یا بعد از کلسیم، آهن، روی، منیزیم و آنتی‌اسید.",
+        times = listOf(t(9)),
         caution = "درد یا ورم تاندون را فوراً گزارش کنید.",
     ),
     d(
@@ -715,6 +760,7 @@ private fun antibiotics() = listOf(
         use = "عفونت‌های بی‌هوازی، عفونت واژن، اسهال آمیبی و ژیاردیا، میکروب معده",
         about = "آنتی‌بیوتیک و ضدانگل.",
         timing = "همراه غذا، با فاصله‌های مساوی.",
+        times = listOf(t(8), t(14), t(20)),
         tip = "همراه غذا؛ بدون الکل",
         caution = "تا ۳ روز بعد از آخرین دوز الکل ننوشید (تهوع و تپش شدید). طعم فلزی دهان شایع است.",
     ),
@@ -725,6 +771,7 @@ private fun antibiotics() = listOf(
         use = "آکنه، عفونت تنفسی، تب مالت (بروسلوز) و برخی عفونت‌های مقاربتی",
         about = "آنتی‌بیوتیک تتراسایکلین.",
         timing = "با یک لیوان پر آب، نشسته یا ایستاده؛ تا ۳۰ دقیقه دراز نکشید (پس درست قبل از خواب نه). با لبنیات، کلسیم، آهن و آنتی‌اسید ۲ تا ۳ ساعت فاصله.",
+        times = listOf(t(9), t(21)),
         caution = "پوست را به آفتاب حساس می‌کند. در بارداری و کودکان زیر ۸ سال مصرف نشود.",
     ),
     d(
@@ -744,6 +791,7 @@ private fun antibiotics() = listOf(
         use = "عفونت ادراری ساده و پیشگیری از آن",
         about = "آنتی‌بیوتیک مخصوص مجاری ادرار.",
         timing = "همراه غذا یا شیر (جذب بهتر، تهوع کمتر).",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD,
         caution = "ممکن است ادرار قهوه‌ای تیره شود که بی‌خطر است.",
     ),
@@ -754,6 +802,7 @@ private fun antibiotics() = listOf(
         use = "عفونت‌های قارچی (برفک دهان، عفونت قارچی واژن)",
         about = "ضدقارچ خوراکی.",
         timing = "با یا بدون غذا، روزی یک بار (در عفونت واژن اغلب یک دوز).",
+        times = listOf(t(9)),
     ),
     d(
         "rifampin", "ریفامپین", "Rifampin",
@@ -775,6 +824,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "افسردگی، اضطراب، وسواس، حملات پانیک و PTSD",
         about = "ضدافسردگی از گروه SSRI؛ اثر کامل ۴ تا ۶ هفته بعد ظاهر می‌شود.",
         timing = "روزی یک بار در ساعت ثابت؛ اگر بی‌خوابی می‌دهد صبح، اگر خواب‌آلود می‌کند شب.",
+        times = listOf(t(9)),
         caution = "$DONT_STOP افکار آسیب به خود را فوراً به پزشک بگویید.",
     ),
     d(
@@ -794,6 +844,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "افسردگی و اضطراب",
         about = "ضدافسردگی از گروه SSRI.",
         timing = "روزی یک بار در ساعت ثابت، صبح یا شب.",
+        times = listOf(t(9)),
         caution = DONT_STOP,
     ),
     d(
@@ -803,6 +854,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "افسردگی، اضطراب فراگیر و پانیک",
         about = "ضدافسردگی از گروه SSRI.",
         timing = "روزی یک بار در ساعت ثابت، صبح یا شب.",
+        times = listOf(t(9)),
         caution = DONT_STOP,
     ),
     d(
@@ -842,6 +894,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "افسردگی، اضطراب، درد عصبی دیابتی و فیبرومیالژیا",
         about = "ضدافسردگی از گروه SNRI که درد را هم کم می‌کند.",
         timing = "در ساعت ثابت، با یا بدون غذا؛ کپسول را باز یا خرد نکنید.",
+        times = listOf(t(9)),
         caution = DONT_STOP,
     ),
     d(
@@ -888,6 +941,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "حملات پانیک، تشنج و اضطراب",
         about = "آرام‌بخش طولانی‌اثر از گروه بنزودیازپین‌ها.",
         timing = "معمولاً شب، یا تقسیم در روز طبق نسخه.",
+        times = listOf(t(22)),
         caution = BENZO_CAUTION,
     ),
     d(
@@ -914,6 +968,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "اضطراب و بی‌خوابی",
         about = "آرام‌بخش از گروه بنزودیازپین‌ها.",
         timing = "اگر برای خواب است، ۳۰ دقیقه قبل از خواب.",
+        times = listOf(t(22)),
         caution = BENZO_CAUTION,
     ),
     d(
@@ -942,6 +997,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "اسکیزوفرنی، اختلال دوقطبی و تحریک‌پذیری در اوتیسم",
         about = "داروی ضدروان‌پریشی.",
         timing = "روزی یک یا دو بار، با یا بدون غذا.",
+        times = listOf(t(21)),
         caution = "سفتی عضلات، لرزش یا بی‌قراری را گزارش کنید.",
     ),
     d(
@@ -961,6 +1017,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "اختلال دوقطبی (تثبیت خلق)",
         about = "تثبیت‌کنندهٔ خلق؛ سطح خونی آن باید با آزمایش کنترل شود.",
         timing = "همراه غذا یا بعد از آن، در ساعت‌های ثابت.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD,
         caution = "هر روز آب کافی بنوشید و نمک غذا را ناگهان کم نکنید. لرزش شدید، اسهال، استفراغ یا گیجی ممکن است نشانهٔ مسمومیت باشد.",
     ),
@@ -971,6 +1028,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "صرع، اختلال دوقطبی و پیشگیری از میگرن",
         about = "داروی ضدتشنج و تثبیت‌کنندهٔ خلق.",
         timing = "همراه غذا یا بعد از آن؛ قرص آهسته‌رهش را نجوید.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD,
         caution = "در بارداری برای جنین خطر جدی دارد. زردی، درد شکم یا خستگی شدید را گزارش کنید.",
     ),
@@ -981,6 +1039,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "صرع، درد عصب صورت (تری‌ژمینال) و اختلال دوقطبی",
         about = "داروی ضدتشنج که اثر بسیاری از داروها را کم می‌کند.",
         timing = "همراه غذا، با فاصله‌های منظم.",
+        times = listOf(t(8), t(20)),
         tip = WITH_FOOD,
         caution = "اثر قرص ضدبارداری را کم می‌کند. تب، گلودرد یا بثورات پوستی را فوراً گزارش کنید.",
     ),
@@ -991,6 +1050,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "صرع",
         about = "داروی ضدتشنج قدیمی که سطح خونی‌اش باید کنترل شود.",
         timing = "در ساعت ثابت، هر روز به یک شکل (با غذا یا بدون غذا). با آنتی‌اسید ۲ ساعت فاصله.",
+        times = listOf(t(21)),
         caution = "بهداشت لثه را رعایت کنید. اثر قرص ضدبارداری را کم می‌کند.",
     ),
     d(
@@ -1000,6 +1060,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "صرع و پیشگیری از دوره‌های افسردگی در دوقطبی",
         about = "داروی ضدتشنج و تثبیت‌کنندهٔ خلق که دوزش آرام‌آرام بالا می‌رود.",
         timing = "در ساعت ثابت، با یا بدون غذا.",
+        times = listOf(t(9)),
         caution = "هر بثورات پوستی را فوراً گزارش کنید، به‌خصوص در هفته‌های اول.",
     ),
     d(
@@ -1017,6 +1078,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "صرع و پیشگیری از میگرن",
         about = "داروی ضدتشنج.",
         timing = "با یا بدون غذا؛ آب فراوان بنوشید (پیشگیری از سنگ کلیه).",
+        times = listOf(t(8), t(20)),
         caution = "گزگز دست و پا شایع است. در دوز بالا ممکن است اثر قرص ضدبارداری را کم کند.",
     ),
     d(
@@ -1044,6 +1106,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "بیماری پارکینسون",
         about = "به مغز دوپامین می‌رساند و حرکت را بهتر می‌کند.",
         timing = "۳۰ دقیقه قبل یا یک ساعت بعد از غذا؛ وعده‌های پرپروتئین (گوشت، تخم‌مرغ) جذب آن را کم می‌کنند. با قرص آهن ۲ ساعت فاصله.",
+        times = listOf(t(7, 30), t(12, 30), t(19, 30)),
         tip = "۳۰ دقیقه قبل از غذا",
         caution = DONT_STOP,
     ),
@@ -1062,6 +1125,7 @@ private fun mindAndNerveDrugs() = listOf(
         use = "اسپاسم عضلانی (ام‌اس، آسیب نخاع)",
         about = "شل‌کنندهٔ عضلانی.",
         timing = "همراه غذا یا شیر برای محافظت از معده.",
+        times = listOf(t(8), t(14), t(20)),
         tip = WITH_FOOD,
         caution = DONT_STOP,
     ),
@@ -1101,6 +1165,7 @@ private fun allergyAndLungDrugs() = listOf(
         use = "آبریزش بینی، عطسه، خارش و کهیر (حساسیت)",
         about = "آنتی‌هیستامین که معمولاً خواب‌آلود نمی‌کند.",
         timing = "روزی یک بار، هر زمان (معمولاً صبح).",
+        times = listOf(t(9)),
     ),
     d(
         "fexofenadine", "فکسوفنادین", "Fexofenadine",
@@ -1108,6 +1173,7 @@ private fun allergyAndLungDrugs() = listOf(
         use = "حساسیت فصلی و کهیر",
         about = "آنتی‌هیستامین بدون خواب‌آوری.",
         timing = "با آب (نه آب‌میوه مثل پرتقال، سیب یا گریپ‌فروت)؛ آنتی‌اسید را با فاصله بخورید.",
+        times = listOf(t(9)),
     ),
     d(
         "chlorpheniramine", "کلرفنیرامین", "Chlorpheniramine",
@@ -1167,12 +1233,13 @@ private fun allergyAndLungDrugs() = listOf(
         use = "آسم و بیماری انسدادی مزمن ریه (COPD)",
         about = "گشادکنندهٔ نایژه که سطح خونی‌اش باید کنترل شود.",
         timing = "در ساعت‌های ثابت؛ قرص آهسته‌رهش را خرد نکنید.",
+        times = listOf(t(8), t(20)),
         caution = "قهوه و نوشیدنی‌های کافئین‌دار زیاد نخورید. تهوع، تپش یا لرزش ممکن است نشانهٔ سطح بالای دارو باشد.",
     ),
 )
 
-private const val FAT_MEAL = "همراه غذای چرب"
-private const val SUPPLEMENT_CAUTION = "در بارداری، شیردهی یا بیماری زمینه‌ای پیش از مصرف با پزشک یا داروساز مشورت کنید."
+internal const val FAT_MEAL = "همراه غذای چرب"
+internal const val SUPPLEMENT_CAUTION = "در بارداری، شیردهی یا بیماری زمینه‌ای پیش از مصرف با پزشک یا داروساز مشورت کنید."
 
 private fun supplements() = listOf(
     d(
@@ -1251,6 +1318,7 @@ private fun supplements() = listOf(
         use = "کمبود پتاسیم (به‌خصوص همراه ادرارآورها)",
         about = "مکمل املاح که معمولاً با نسخه مصرف می‌شود.",
         timing = "همراه غذا و یک لیوان پر آب؛ قرص را نجوید.",
+        times = listOf(t(13)),
         tip = WITH_FOOD,
         caution = "در بیماری کلیه فقط با نظر پزشک.",
     ),
@@ -1461,6 +1529,7 @@ private fun otherDrugs() = listOf(
         use = "پیشگیری از حملات نقرس و کاهش اسید اوریک",
         about = "ساخت اسید اوریک را کم می‌کند (برای درمان حملهٔ حاد نیست).",
         timing = "بعد از غذا با یک لیوان آب؛ در طول روز آب فراوان بنوشید.",
+        times = listOf(t(13, 30)),
         tip = "بعد از غذا",
         caution = "با اولین بثورات پوستی دارو را کنار بگذارید و فوراً به پزشک خبر دهید.",
     ),
@@ -1471,12 +1540,13 @@ private fun otherDrugs() = listOf(
         use = "حملهٔ نقرس و پیشگیری از آن، تب مدیترانه‌ای (FMF) و پریکاردیت",
         about = "ضدالتهاب مخصوص نقرس.",
         timing = "با یا بدون غذا؛ در حملهٔ حاد هرچه زودتر.",
+        times = listOf(t(9)),
         caution = "اسهال یا استفراغ شدید را به پزشک بگویید؛ ممکن است دوز باید کم شود.",
     ),
     d(
         "alendronate", "آلندرونات", "Alendronate",
         aliases = listOf("فوزامکس", "fosamax"),
-        tags = setOf("alendronate"),
+        tags = setOf("alendronate", "bisphosphonate"),
         use = "پوکی استخوان",
         about = "تخریب استخوان را کم می‌کند.",
         timing = "صبح ناشتا با یک لیوان کامل آب ساده (نه چای یا آب معدنی)، نشسته یا ایستاده؛ تا ۳۰ دقیقه چیزی نخورید و دراز نکشید.",
@@ -1491,6 +1561,7 @@ private fun otherDrugs() = listOf(
         use = "آرتریت روماتوئید، پسوریازیس و برخی سرطان‌ها",
         about = "تعدیل‌کنندهٔ ایمنی؛ در روماتیسم و پسوریازیس با دوز کم و هفتگی مصرف می‌شود.",
         timing = "در روماتیسم و پسوریازیس فقط هفته‌ای یک بار، در یک روز ثابت. اسید فولیک طبق دستور پزشک (معمولاً روزی غیر از روز متوترکسات).",
+        times = listOf(t(9)),
         caution = "⚠️ مصرف روزانهٔ متوترکسات به‌جای هفتگی می‌تواند کشنده باشد. زخم دهان، تب یا تنگی نفس را فوراً گزارش کنید. الکل ممنوع.",
         weekly = true,
     ),
@@ -1501,6 +1572,7 @@ private fun otherDrugs() = listOf(
         use = "آرتریت روماتوئید و لوپوس",
         about = "داروی ضدروماتیسم.",
         timing = "همراه غذا یا شیر.",
+        times = listOf(t(13)),
         tip = WITH_FOOD,
         caution = "معاینهٔ منظم چشم لازم است.",
     ),
@@ -1511,6 +1583,7 @@ private fun otherDrugs() = listOf(
         use = "آکنهٔ شدید و مقاوم",
         about = "از مشتقات ویتامین A؛ چربی پوست را به‌شدت کم می‌کند.",
         timing = "همراه غذا (ترجیحاً چرب) برای جذب بهتر.",
+        times = listOf(t(13)),
         tip = WITH_FOOD,
         caution = "⚠️ در بارداری کاملاً ممنوع است؛ از یک ماه قبل تا یک ماه بعد از درمان باید از بارداری پیشگیری شود. مکمل ویتامین A نخورید.",
     ),

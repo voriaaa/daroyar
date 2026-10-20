@@ -47,6 +47,16 @@ class DrugDatabaseTest {
     }
 
     @Test
+    fun databaseIsLargeAndMostDrugsHaveABestTime() {
+        val drugs = DrugDatabase.drugs
+        assertTrue("only ${drugs.size} drugs", drugs.size >= 300)
+        val withTimes = drugs.count { it.suggestedTimes != null }
+        // The rest are "as needed" drugs (pain, migraine, cold, sleep) or prescriber-specific (insulin).
+        assertTrue("$withTimes of ${drugs.size} have a best time", withTimes * 100 / drugs.size >= 85)
+        drugs.filter { it.weekly }.forEach { assertEquals(it.id, 1, it.suggestedTimes?.size) }
+    }
+
+    @Test
     fun combosPointAtRealDrugs() {
         DrugDatabase.combos.values.flatten().forEach { assertTrue(it, it in DrugDatabase.byId) }
     }
